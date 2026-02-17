@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bluewave Express - Admin Portal</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #001f3f, #000814);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .login-container {
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(10px);
+            border: 1px solid #00ffff33;
+            border-radius: 40px;
+            padding: 3rem;
+            width: 100%;
+            max-width: 450px;
+            box-shadow: 0 0 60px #00ffff33;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .logo-icon {
+            font-size: 3rem;
+            color: #00ffff;
+            text-shadow: 0 0 20px #00ffff;
+            animation: pulse 2s infinite;
+            margin-bottom: 0.5rem;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.8; }
+            100% { opacity: 1; }
+        }
+
+        .logo-text {
+            font-size: 1.8rem;
+            font-weight: bold;
+            background: linear-gradient(45deg, #00ffff, #ff00ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        h2 {
+            color: #ffffff;
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 1.8rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            color: #00ffff;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 1rem 1.2rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid #00ffff33;
+            border-radius: 15px;
+            color: #ffffff;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #00ffff;
+            box-shadow: 0 0 20px #00ffff33;
+        }
+
+        .form-group input::placeholder {
+            color: #666666;
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(45deg, #00ffff, #ff00ff);
+            border: none;
+            border-radius: 15px;
+            color: #ffffff;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 1rem;
+        }
+
+        .btn-login:hover {
+            transform: scale(1.02);
+            box-shadow: 0 0 30px #ff00ff;
+        }
+
+        .btn-register {
+            width: 100%;
+            padding: 1rem;
+            background: transparent;
+            border: 2px solid #00ffff;
+            border-radius: 15px;
+            color: #00ffff;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 1rem;
+        }
+
+        .btn-register:hover {
+            background: #00ffff;
+            color: #000814;
+            box-shadow: 0 0 20px #00ffff;
+        }
+
+        .error-message {
+            color: #ff4444;
+            text-align: center;
+            margin: 1rem 0;
+            padding: 0.8rem;
+            border-radius: 10px;
+            background: rgba(255, 0, 0, 0.1);
+            border: 1px solid #ff4444;
+            display: none;
+        }
+
+        .error-message.active {
+            display: block;
+        }
+
+        .success-message {
+            color: #00ff00;
+            text-align: center;
+            margin: 1rem 0;
+            padding: 0.8rem;
+            border-radius: 10px;
+            background: rgba(0, 255, 0, 0.1);
+            border: 1px solid #00ff00;
+            display: none;
+        }
+
+        .success-message.active {
+            display: block;
+        }
+
+        .register-form {
+            display: none;
+        }
+
+        .register-form.active {
+            display: block;
+        }
+
+        .login-form {
+            display: block;
+        }
+
+        .login-form.hidden {
+            display: none;
+        }
+
+        .back-link {
+            text-align: center;
+            margin-top: 1.5rem;
+        }
+
+        .back-link a {
+            color: #00ffff;
+            text-decoration: none;
+            font-size: 0.95rem;
+        }
+
+        .back-link a:hover {
+            text-decoration: underline;
+        }
+
+        .toggle-text {
+            text-align: center;
+            margin-top: 1rem;
+            color: #cccccc;
+        }
+
+        .toggle-text span {
+            color: #00ffff;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .toggle-text span:hover {
+            text-decoration: underline;
+        }
+
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 1rem;
+        }
+
+        .loading-spinner.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid rgba(0, 255, 255, 0.1);
+            border-left-color: #00ffff;
+            border-right-color: #ff00ff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 2rem;
+            }
+            .logo-text {
+                font-size: 1.5rem;
+            }
+            h2 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">
+            <div class="logo-icon">⚓</div>
+            <div class="logo-text">Bluewave Express Cargo</div>
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+        <div class="success-message" id="successMessage"></div>
+        
+        <div class="loading-spinner" id="loadingSpinner">
+            <div class="spinner"></div>
+        </div>
+
+        <!-- Login Form -->
+        <div class="login-form" id="loginForm">
+            <h2>Admin Login</h2>
+            <div class="form-group">
+                <label>Username or Email</label>
+                <input type="text" id="loginUsername" placeholder="Enter username or email">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="loginPassword" placeholder="Enter password">
+            </div>
+            <button class="btn-login" onclick="adminLogin()">Login to Dashboard</button>
+            
+            <div class="toggle-text">
+                Don't have an account? <span onclick="showRegister()">Create Account</span>
+            </div>
+        </div>
+
+        <!-- Register Form -->
+        <div class="register-form" id="registerForm">
+            <h2>Create Admin Account</h2>
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" id="regFullName" placeholder="Enter full name">
+            </div>
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="regUsername" placeholder="Choose username">
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="regEmail" placeholder="Enter email">
+            </div>
+            <div class="form-group">
+                <label>Phone Number</label>
+                <input type="tel" id="regPhone" placeholder="Enter phone number">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="regPassword" placeholder="Create password">
+            </div>
+            <div class="form-group">
+                <label>Confirm Password</label>
+                <input type="password" id="regConfirmPassword" placeholder="Confirm password">
+            </div>
+            <button class="btn-login" onclick="adminRegister()">Create Account</button>
+            
+            <div class="toggle-text">
+                Already have an account? <span onclick="showLogin()">Login</span>
+            </div>
+        </div>
+
+        <div class="back-link">
+            <a href="/">← Back to Tracking</a>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = window.location.origin; // This will use the same domain as the HTML file
+
+        function showRegister() {
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('registerForm').classList.add('active');
+            document.getElementById('errorMessage').classList.remove('active');
+            document.getElementById('successMessage').classList.remove('active');
+        }
+
+        function showLogin() {
+            document.getElementById('loginForm').classList.remove('hidden');
+            document.getElementById('registerForm').classList.remove('active');
+            document.getElementById('errorMessage').classList.remove('active');
+            document.getElementById('successMessage').classList.remove('active');
+        }
+
+        function setLoading(isLoading) {
+            const spinner = document.getElementById('loadingSpinner');
+            if (isLoading) {
+                spinner.classList.add('active');
+            } else {
+                spinner.classList.remove('active');
+            }
+        }
+
+        async function adminLogin() {
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            const errorElement = document.getElementById('errorMessage');
+
+            if (!username || !password) {
+                errorElement.textContent = 'Please fill in all fields';
+                errorElement.classList.add('active');
+                return;
+            }
+
+            setLoading(true);
+            errorElement.classList.remove('active');
+
+            try {
+                const response = await fetch(`${API_URL}/api/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    window.location.href = '/admin-dashboard';
+                } else {
+                    errorElement.textContent = data.message || 'Login failed';
+                    errorElement.classList.add('active');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                errorElement.textContent = 'Network error. Please try again.';
+                errorElement.classList.add('active');
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        async function adminRegister() {
+            const fullName = document.getElementById('regFullName').value.trim();
+            const username = document.getElementById('regUsername').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const phone = document.getElementById('regPhone').value.trim();
+            const password = document.getElementById('regPassword').value;
+            const confirmPassword = document.getElementById('regConfirmPassword').value;
+            
+            const errorElement = document.getElementById('errorMessage');
+            const successElement = document.getElementById('successMessage');
+
+            if (!fullName || !username || !email || !phone || !password || !confirmPassword) {
+                errorElement.textContent = 'Please fill in all fields';
+                errorElement.classList.add('active');
+                successElement.classList.remove('active');
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                errorElement.textContent = 'Passwords do not match';
+                errorElement.classList.add('active');
+                successElement.classList.remove('active');
+                return;
+            }
+
+            if (password.length < 6) {
+                errorElement.textContent = 'Password must be at least 6 characters';
+                errorElement.classList.add('active');
+                successElement.classList.remove('active');
+                return;
+            }
+
+            setLoading(true);
+            errorElement.classList.remove('active');
+            successElement.classList.remove('active');
+
+            try {
+                const response = await fetch(`${API_URL}/api/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        name: fullName,
+                        username, 
+                        email, 
+                        phone, 
+                        password 
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    
+                    successElement.textContent = 'Account created successfully! Redirecting...';
+                    successElement.classList.add('active');
+                    
+                    setTimeout(() => {
+                        window.location.href = '/admin-dashboard';
+                    }, 2000);
+                } else {
+                    errorElement.textContent = data.message || 'Registration failed';
+                    errorElement.classList.add('active');
+                }
+            } catch (error) {
+                console.error('Registration error:', error);
+                errorElement.textContent = 'Network error. Please try again.';
+                errorElement.classList.add('active');
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        // Check if already logged in
+        document.addEventListener('DOMContentLoaded', function() {
+            const token = localStorage.getItem('token');
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            
+            if (token && user) {
+                window.location.href = '/admin-dashboard';
+            }
+        });
+    </script>
+</body>
+</html>
