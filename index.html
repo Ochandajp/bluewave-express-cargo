@@ -20,30 +20,29 @@
             flex-direction: column;
         }
 
-        /* Header/Navigation */
         .navbar {
             background: linear-gradient(135deg, #001f3f, #000814);
             padding: 1rem 2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 20px rgba(0, 255, 255, 0.1);
+            border-bottom: 1px solid #00ffff33;
             position: sticky;
             top: 0;
             z-index: 100;
-            border-bottom: 1px solid #00ffff33;
         }
 
         .logo {
             display: flex;
             align-items: center;
             gap: 10px;
+            cursor: pointer;
         }
 
         .logo-icon {
             font-size: 2rem;
             color: #00ffff;
-            text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff;
+            text-shadow: 0 0 10px #00ffff;
             animation: pulse 2s infinite;
         }
 
@@ -59,7 +58,6 @@
             background: linear-gradient(45deg, #00ffff, #ff00ff);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            letter-spacing: 1px;
         }
 
         .nav-links {
@@ -73,7 +71,6 @@
             text-decoration: none;
             transition: all 0.3s;
             position: relative;
-            font-weight: 500;
         }
 
         .nav-links a:hover {
@@ -81,79 +78,101 @@
             text-shadow: 0 0 10px #00ffff;
         }
 
-        .nav-links a::after {
-            content: '';
-            position: absolute;
-            bottom: -5px;
-            left: 0;
-            width: 0;
-            height: 2px;
-            background: linear-gradient(90deg, #00ffff, #ff00ff);
-            transition: width 0.3s;
+        .auth-buttons {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
         }
 
-        .nav-links a:hover::after {
-            width: 100%;
+        .btn-login {
+            background: transparent;
+            border: 2px solid #00ffff;
+            color: #00ffff;
+            padding: 0.5rem 1.5rem;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+            font-size: 0.9rem;
         }
 
-        /* Hero Section */
+        .btn-login:hover {
+            background: #00ffff;
+            color: #000814;
+            box-shadow: 0 0 20px #00ffff;
+        }
+
+        .btn-logout {
+            background: transparent;
+            border: 2px solid #ff00ff;
+            color: #ff00ff;
+            padding: 0.5rem 1.5rem;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .btn-logout:hover {
+            background: #ff00ff;
+            color: #000814;
+            box-shadow: 0 0 20px #ff00ff;
+        }
+
+        .btn-dashboard {
+            background: linear-gradient(45deg, #00ffff, #ff00ff);
+            border: none;
+            color: #ffffff;
+            padding: 0.5rem 1.5rem;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+            font-size: 0.9rem;
+            text-decoration: none;
+        }
+
+        .btn-dashboard:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px #ff00ff;
+        }
+
+        .user-greeting {
+            color: #00ffff;
+            font-weight: bold;
+            margin-right: 1rem;
+        }
+
         .hero {
             background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.8)),
                         url('https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80');
             background-size: cover;
             background-position: center;
-            background-attachment: fixed;
             min-height: 500px;
             display: flex;
             align-items: center;
             justify-content: center;
             text-align: center;
             padding: 4rem 2rem;
-            position: relative;
-            border-bottom: 1px solid #00ffff33;
-        }
-
-        .hero::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: radial-gradient(circle at center, transparent 0%, #000814 100%);
-            pointer-events: none;
         }
 
         .hero-content {
             max-width: 900px;
-            position: relative;
-            z-index: 1;
         }
 
         .hero h1 {
             font-size: 4rem;
             margin-bottom: 1rem;
-            background: linear-gradient(45deg, #00ffff, #ff00ff, #00ffff);
+            background: linear-gradient(45deg, #00ffff, #ff00ff);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             animation: glow 3s ease-in-out infinite alternate;
-            font-weight: 800;
-            letter-spacing: 2px;
         }
 
         @keyframes glow {
-            from { text-shadow: 0 0 20px #00ffff, 0 0 40px #00ffff; }
-            to { text-shadow: 0 0 30px #ff00ff, 0 0 60px #ff00ff; }
-        }
-
-        .hero p {
-            font-size: 1.3rem;
-            margin-bottom: 1rem;
-            color: #cccccc;
-            line-height: 1.8;
-            max-width: 700px;
-            margin-left: auto;
-            margin-right: auto;
+            from { text-shadow: 0 0 20px #00ffff; }
+            to { text-shadow: 0 0 40px #ff00ff; }
         }
 
         .contact-info {
@@ -172,17 +191,10 @@
             font-size: 1.1rem;
         }
 
-        .contact-item span {
-            color: #ffffff;
-        }
-
-        /* Tracking Section */
         .tracking-section {
             background: linear-gradient(135deg, #001824, #000d1a);
             padding: 5rem 2rem;
             text-align: center;
-            border-bottom: 1px solid #00ffff33;
-            position: relative;
         }
 
         .section-title {
@@ -191,8 +203,6 @@
             background: linear-gradient(45deg, #00ffff, #ff00ff);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            font-weight: 700;
-            letter-spacing: 1px;
         }
 
         .tracking-form {
@@ -202,7 +212,6 @@
             gap: 1rem;
             flex-wrap: wrap;
             justify-content: center;
-            padding: 0 1rem;
         }
 
         .tracking-input {
@@ -214,20 +223,12 @@
             border-radius: 50px;
             color: #ffffff;
             font-size: 1.1rem;
-            transition: all 0.3s;
-            backdrop-filter: blur(5px);
         }
 
         .tracking-input:focus {
             outline: none;
             border-color: #00ffff;
             box-shadow: 0 0 30px #00ffff33;
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .tracking-input::placeholder {
-            color: #888888;
-            font-size: 1rem;
         }
 
         .tracking-btn {
@@ -239,26 +240,6 @@
             font-weight: bold;
             cursor: pointer;
             transition: all 0.3s;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-size: 1rem;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .tracking-btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-            transition: left 0.5s;
-        }
-
-        .tracking-btn:hover::before {
-            left: 100%;
         }
 
         .tracking-btn:hover {
@@ -266,7 +247,6 @@
             box-shadow: 0 0 40px #ff00ff;
         }
 
-        /* Tracking Result */
         .tracking-result {
             max-width: 1200px;
             margin: 3rem auto 0;
@@ -274,24 +254,11 @@
             background: rgba(255, 255, 255, 0.02);
             border-radius: 30px;
             border: 1px solid #00ffff33;
-            backdrop-filter: blur(10px);
             display: none;
-            animation: slideIn 0.5s;
         }
 
         .tracking-result.active {
             display: block;
-        }
-
-        @keyframes slideIn {
-            from { 
-                opacity: 0; 
-                transform: translateY(30px); 
-            }
-            to { 
-                opacity: 1; 
-                transform: translateY(0); 
-            }
         }
 
         .tracking-header {
@@ -300,7 +267,6 @@
             align-items: center;
             margin-bottom: 2rem;
             flex-wrap: wrap;
-            gap: 1rem;
         }
 
         .tracking-number {
@@ -313,7 +279,6 @@
             padding: 0.5rem 2rem;
             border-radius: 30px;
             font-weight: bold;
-            font-size: 1.1rem;
         }
 
         .status-pending { background: #ffa50033; color: #ffa500; border: 2px solid #ffa500; }
@@ -338,7 +303,6 @@
         .info-card h3 {
             color: #00ffff;
             margin-bottom: 1.2rem;
-            font-size: 1.2rem;
             border-bottom: 1px solid #00ffff33;
             padding-bottom: 0.5rem;
         }
@@ -346,7 +310,6 @@
         .info-row {
             display: flex;
             margin-bottom: 0.8rem;
-            font-size: 0.95rem;
         }
 
         .info-label {
@@ -357,21 +320,13 @@
         .info-value {
             flex: 1;
             color: #ffffff;
-            font-weight: 500;
-        }
-
-        .package-details {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 1rem;
-            margin-top: 1rem;
         }
 
         .package-dimensions {
-            grid-column: span 2;
             display: flex;
             gap: 1rem;
             flex-wrap: wrap;
+            margin-top: 1rem;
         }
 
         .dimension-item {
@@ -397,15 +352,8 @@
             transition: width 0.5s;
         }
 
-        /* Shipment History */
         .history-section {
             margin-top: 2rem;
-        }
-
-        .history-title {
-            color: #00ffff;
-            font-size: 1.2rem;
-            margin-bottom: 1rem;
         }
 
         .history-timeline {
@@ -459,47 +407,6 @@
         .history-location { color: #ffffff; }
         .history-updated { color: #888888; font-size: 0.9rem; }
 
-        /* Services Section */
-        .services {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 2rem;
-            padding: 4rem 2rem;
-            background: #000814;
-        }
-
-        .service-card {
-            text-align: center;
-            padding: 2rem;
-            background: rgba(255, 255, 255, 0.02);
-            border-radius: 20px;
-            border: 1px solid #00ffff33;
-            transition: all 0.3s;
-        }
-
-        .service-card:hover {
-            transform: translateY(-10px);
-            border-color: #00ffff;
-            box-shadow: 0 10px 30px #00ffff1a;
-        }
-
-        .service-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-        }
-
-        .service-card h3 {
-            color: #00ffff;
-            margin-bottom: 0.8rem;
-        }
-
-        .service-card p {
-            color: #cccccc;
-            font-size: 0.95rem;
-            line-height: 1.5;
-        }
-
-        /* Footer */
         .footer {
             background: #000814;
             padding: 3rem 2rem 2rem;
@@ -518,18 +425,10 @@
         .footer-section h4 {
             color: #00ffff;
             margin-bottom: 1rem;
-            font-size: 1.2rem;
         }
 
-        .footer-section p, .footer-section a {
+        .footer-section p {
             color: #cccccc;
-            text-decoration: none;
-            line-height: 1.8;
-            display: block;
-        }
-
-        .footer-section a:hover {
-            color: #00ffff;
         }
 
         .contact-detail {
@@ -537,6 +436,7 @@
             align-items: center;
             gap: 0.5rem;
             margin-bottom: 0.5rem;
+            color: #cccccc;
         }
 
         .footer-bottom {
@@ -547,7 +447,6 @@
             color: #888888;
         }
 
-        /* Error Message */
         .error-message {
             color: #ff4444;
             text-align: center;
@@ -564,7 +463,6 @@
             display: block;
         }
 
-        /* Loading Spinner */
         .loading-spinner {
             display: none;
             text-align: center;
@@ -583,44 +481,114 @@
             width: 50px;
             height: 50px;
             animation: spin 1s linear infinite;
-            margin: 0 auto 1rem;
+            margin: 0 auto;
         }
 
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
 
-        /* Admin Login Button - Hidden */
-        .admin-login-btn {
+        /* Login Modal */
+        .modal {
             display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
         }
 
-        /* Responsive */
-        @media (max-width: 1024px) {
-            .tracking-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            .history-item {
-                grid-template-columns: 140px 100px 1fr 120px;
-                font-size: 0.9rem;
-            }
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #001824, #000d1a);
+            padding: 2.5rem;
+            border-radius: 30px;
+            width: 95%;
+            max-width: 400px;
+            border: 1px solid #00ffff33;
+            box-shadow: 0 0 60px #00ffff33;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .modal-header h2 {
+            color: #00ffff;
+            font-size: 2rem;
+        }
+
+        .close-modal {
+            font-size: 2.5rem;
+            cursor: pointer;
+            color: #ffffff;
+            transition: all 0.3s;
+        }
+
+        .close-modal:hover {
+            color: #ff00ff;
+            transform: rotate(90deg);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            color: #00ffff;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid #00ffff33;
+            border-radius: 15px;
+            color: #ffffff;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #00ffff;
+            box-shadow: 0 0 20px #00ffff33;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(45deg, #00ffff, #ff00ff);
+            border: none;
+            border-radius: 15px;
+            color: #ffffff;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 1rem;
+        }
+
+        .login-btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 0 30px #ff00ff;
         }
 
         @media (max-width: 768px) {
-            .navbar {
-                flex-direction: column;
-                gap: 1rem;
-            }
-            .nav-links {
-                flex-wrap: wrap;
-                justify-content: center;
-            }
-            .hero h1 {
-                font-size: 2.5rem;
-            }
-            .section-title {
-                font-size: 2rem;
-            }
             .tracking-grid {
                 grid-template-columns: 1fr;
             }
@@ -629,48 +597,56 @@
                 gap: 0.3rem;
                 padding-left: 1.5rem;
             }
-            .history-item::before {
-                left: -6px;
-                top: 1.5rem;
-            }
-            .package-dimensions {
-                flex-direction: column;
-            }
-        }
-
-        @media (max-width: 480px) {
             .hero h1 {
-                font-size: 2rem;
+                font-size: 2.5rem;
             }
-            .contact-info {
+            .navbar {
                 flex-direction: column;
-                gap: 0.8rem;
+                gap: 1rem;
             }
-            .tracking-input {
-                min-width: 100%;
-            }
-            .tracking-btn {
-                width: 100%;
+            .nav-links {
+                flex-wrap: wrap;
+                justify-content: center;
             }
         }
     </style>
 </head>
 <body>
-    <!-- Navigation -->
     <nav class="navbar">
-        <div class="logo">
+        <div class="logo" onclick="window.location.href='/'">
             <span class="logo-icon">⚓</span>
             <span class="logo-text">Bluewave Express Cargo</span>
         </div>
         <div class="nav-links">
             <a href="#home">Home</a>
             <a href="#tracking">Track Shipment</a>
-            <a href="#services">Services</a>
             <a href="#contact">Contact</a>
+        </div>
+        <div class="auth-buttons" id="authButtons">
+            <!-- Auth buttons will be dynamically inserted here -->
         </div>
     </nav>
 
-    <!-- Hero Section -->
+    <!-- Login Modal -->
+    <div class="modal" id="loginModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Admin Login</h2>
+                <span class="close-modal" onclick="closeLoginModal()">&times;</span>
+            </div>
+            <div class="form-group">
+                <label>Username or Email</label>
+                <input type="text" id="loginUsername" placeholder="Enter username or email">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="loginPassword" placeholder="Enter password">
+            </div>
+            <button class="login-btn" onclick="handleLogin()">Login</button>
+            <div class="error-message" id="loginError"></div>
+        </div>
+    </div>
+
     <section id="home" class="hero">
         <div class="hero-content">
             <h1>Bluewave Express Cargo</h1>
@@ -686,52 +662,22 @@
         </div>
     </section>
 
-    <!-- Tracking Section -->
     <section id="tracking" class="tracking-section">
         <h2 class="section-title">Track Your Shipment</h2>
         <div class="tracking-form">
-            <input type="text" class="tracking-input" id="trackingNumber" placeholder="Enter 9-digit tracking number (e.g., 123456789)">
+            <input type="text" class="tracking-input" id="trackingNumber" placeholder="Enter 9-digit tracking number">
             <button class="tracking-btn" onclick="trackShipment()">Track Package</button>
         </div>
 
-        <!-- Error Message -->
         <div class="error-message" id="trackingError"></div>
-
-        <!-- Loading Spinner -->
         <div class="loading-spinner" id="trackingSpinner">
             <div class="spinner"></div>
             <p>Fetching shipment details...</p>
         </div>
 
-        <!-- Tracking Result -->
         <div class="tracking-result" id="trackingResult"></div>
     </section>
 
-    <!-- Services Section -->
-    <section id="services" class="services">
-        <div class="service-card">
-            <div class="service-icon">📦</div>
-            <h3>Express Shipping</h3>
-            <p>Fast and reliable delivery for urgent shipments worldwide</p>
-        </div>
-        <div class="service-card">
-            <div class="service-icon">🌍</div>
-            <h3>Global Freight</h3>
-            <p>Air, sea, and road freight to over 200 countries</p>
-        </div>
-        <div class="service-card">
-            <div class="service-icon">📄</div>
-            <h3>Customs Clearance</h3>
-            <p>Expert handling of all customs documentation</p>
-        </div>
-        <div class="service-card">
-            <div class="service-icon">🚚</div>
-            <h3>Door-to-Door</h3>
-            <p>Complete logistics from pickup to final delivery</p>
-        </div>
-    </section>
-
-    <!-- Footer -->
     <footer id="contact" class="footer">
         <div class="footer-content">
             <div class="footer-section">
@@ -740,21 +686,15 @@
             </div>
             <div class="footer-section">
                 <h4>Quick Links</h4>
-                <a href="#home">Home</a>
-                <a href="#tracking">Track Shipment</a>
-                <a href="#services">Services</a>
+                <a href="#home" style="color: #cccccc; text-decoration: none; display: block; margin-bottom: 0.5rem;">Home</a>
+                <a href="#tracking" style="color: #cccccc; text-decoration: none; display: block; margin-bottom: 0.5rem;">Track Shipment</a>
+                <a href="/admin" style="color: #cccccc; text-decoration: none; display: block; margin-bottom: 0.5rem;">Admin Panel</a>
             </div>
             <div class="footer-section">
                 <h4>Contact Us</h4>
-                <div class="contact-detail">
-                    <span>📞</span> 0202000035
-                </div>
-                <div class="contact-detail">
-                    <span>✉️</span> Info@bluewaveexpresscargo.com
-                </div>
-                <div class="contact-detail">
-                    <span>📍</span> Nairobi, Kenya
-                </div>
+                <div class="contact-detail">📞 0202000035</div>
+                <div class="contact-detail">✉️ Info@bluewaveexpresscargo.com</div>
+                <div class="contact-detail">📍 Nairobi, Kenya</div>
             </div>
         </div>
         <div class="footer-bottom">
@@ -763,7 +703,100 @@
     </footer>
 
     <script>
-        const API_URL = 'https://writershub-backend1.onrender.com/api';
+        // Use your Render.com URL or localhost for development
+        const API_URL = window.location.origin; // This will work on Render
+        // For local testing, you can use: const API_URL = 'http://localhost:5000';
+
+        // Check login status on page load
+        function checkLoginStatus() {
+            const token = localStorage.getItem('token');
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            const authButtons = document.getElementById('authButtons');
+
+            if (token && user) {
+                // User is logged in
+                authButtons.innerHTML = `
+                    <span class="user-greeting">Hello, ${user.name || user.username}</span>
+                    <button class="btn-dashboard" onclick="goToDashboard()">Dashboard</button>
+                    <button class="btn-logout" onclick="handleLogout()">Logout</button>
+                `;
+            } else {
+                // User is not logged in
+                authButtons.innerHTML = `
+                    <button class="btn-login" onclick="showLoginModal()">Admin Login</button>
+                `;
+            }
+        }
+
+        // Show login modal
+        function showLoginModal() {
+            document.getElementById('loginModal').classList.add('active');
+            document.getElementById('loginError').classList.remove('active');
+        }
+
+        // Close login modal
+        function closeLoginModal() {
+            document.getElementById('loginModal').classList.remove('active');
+            document.getElementById('loginUsername').value = '';
+            document.getElementById('loginPassword').value = '';
+        }
+
+        // Handle login
+        async function handleLogin() {
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            const errorEl = document.getElementById('loginError');
+
+            errorEl.classList.remove('active');
+            
+            if (!username || !password) {
+                errorEl.textContent = 'Please enter both username and password';
+                errorEl.classList.add('active');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/api/login`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    closeLoginModal();
+                    checkLoginStatus();
+                    // Redirect to admin dashboard
+                    window.location.href = '/admin';
+                } else {
+                    errorEl.textContent = data.message || 'Login failed';
+                    errorEl.classList.add('active');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                errorEl.textContent = 'Cannot connect to server. Please try again.';
+                errorEl.classList.add('active');
+            }
+        }
+
+        // Handle logout
+        function handleLogout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            checkLoginStatus();
+            window.location.href = '/';
+        }
+
+        // Go to dashboard
+        function goToDashboard() {
+            window.location.href = '/admin';
+        }
 
         // Track shipment function
         async function trackShipment() {
@@ -772,7 +805,6 @@
             const spinner = document.getElementById('trackingSpinner');
             const resultDiv = document.getElementById('trackingResult');
 
-            // Clear previous results
             errorElement.classList.remove('active');
             resultDiv.classList.remove('active');
             
@@ -782,7 +814,6 @@
                 return;
             }
 
-            // Validate 9-digit number
             if (!/^\d{9}$/.test(trackingNumber)) {
                 errorElement.textContent = 'Tracking number must be exactly 9 digits';
                 errorElement.classList.add('active');
@@ -792,15 +823,15 @@
             spinner.classList.add('active');
 
             try {
-                const response = await fetch(`${API_URL}/shipments/track/${trackingNumber}`);
-                
-                if (!response.ok) {
-                    throw new Error('Shipment not found');
-                }
+                const response = await fetch(`${API_URL}/api/shipments/track/${trackingNumber}`);
+                const data = await response.json();
 
-                const shipment = await response.json();
-                displayShipmentDetails(shipment);
-                resultDiv.classList.add('active');
+                if (response.ok && data.success) {
+                    displayShipmentDetails(data.shipment);
+                    resultDiv.classList.add('active');
+                } else {
+                    throw new Error(data.message || 'Shipment not found');
+                }
             } catch (error) {
                 errorElement.textContent = 'Tracking number not found. Please check and try again.';
                 errorElement.classList.add('active');
@@ -813,26 +844,26 @@
         function displayShipmentDetails(shipment) {
             const resultDiv = document.getElementById('trackingResult');
             
-            // Determine status class
-            const statusClass = shipment.status ? shipment.status.toLowerCase().replace(' ', '') : 'pending';
+            const statusClass = shipment.status ? shipment.status.toLowerCase().replace(/ /g, '') : 'pending';
             
-            // Calculate progress percentage based on status
             let progress = 0;
             switch(shipment.status?.toLowerCase()) {
                 case 'pending': progress = 10; break;
                 case 'on hold': progress = 20; break;
-                case 'processing': progress = 30; break;
-                case 'in transit': progress = 50; break;
                 case 'out for delivery': progress = 80; break;
                 case 'delivered': progress = 100; break;
-                default: progress = 0;
+                default: progress = 50;
             }
 
-            // Format history items
             let historyHtml = '';
             if (shipment.trackingHistory && shipment.trackingHistory.length > 0) {
-                shipment.trackingHistory.forEach(history => {
-                    const date = new Date(history.timestamp).toLocaleString();
+                // Sort history by date (newest first)
+                const sortedHistory = [...shipment.trackingHistory].sort((a, b) => 
+                    new Date(b.timestamp) - new Date(a.timestamp)
+                );
+                
+                sortedHistory.forEach(history => {
+                    const date = history.timestamp ? new Date(history.timestamp).toLocaleString() : 'N/A';
                     historyHtml += `
                         <div class="history-item">
                             <span class="history-date">${date}</span>
@@ -855,11 +886,10 @@
                 </div>
 
                 <div class="tracking-grid">
-                    <!-- Recipient Information -->
                     <div class="info-card">
                         <h3>Recipient Information</h3>
                         <div class="info-row">
-                            <span class="info-label">Full Name:</span>
+                            <span class="info-label">Name:</span>
                             <span class="info-value">${shipment.recipientName || 'N/A'}</span>
                         </div>
                         <div class="info-row">
@@ -876,7 +906,6 @@
                         </div>
                     </div>
 
-                    <!-- Shipment Information -->
                     <div class="info-card">
                         <h3>Shipment Information</h3>
                         <div class="info-row">
@@ -892,16 +921,11 @@
                             <span class="info-value">${shipment.carrier || 'N/A'}</span>
                         </div>
                         <div class="info-row">
-                            <span class="info-label">Carrier Ref:</span>
-                            <span class="info-value">${shipment.carrierRef || 'N/A'}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">Shipment Type:</span>
+                            <span class="info-label">Type:</span>
                             <span class="info-value">${shipment.shipmentType || 'N/A'}</span>
                         </div>
                     </div>
 
-                    <!-- Package Details -->
                     <div class="info-card">
                         <h3>Package Details</h3>
                         <div class="info-row">
@@ -912,77 +936,34 @@
                             <span class="info-label">Quantity:</span>
                             <span class="info-value">${shipment.quantity || 'N/A'}</span>
                         </div>
-                        <div class="info-row">
-                            <span class="info-label">Piece Type:</span>
-                            <span class="info-value">${shipment.pieceType || 'N/A'}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">Description:</span>
-                            <span class="info-value">${shipment.description || 'N/A'}</span>
-                        </div>
-                        
                         <div class="package-dimensions">
-                            <span class="dimension-item">Length: ${shipment.length || 'N/A'} cm</span>
-                            <span class="dimension-item">Width: ${shipment.width || 'N/A'} cm</span>
-                            <span class="dimension-item">Height: ${shipment.height || 'N/A'} cm</span>
-                            <span class="dimension-item">Weight: ${shipment.weight || 'N/A'} kg</span>
-                        </div>
-                    </div>
-
-                    <!-- Payment & Schedule -->
-                    <div class="info-card">
-                        <h3>Payment & Schedule</h3>
-                        <div class="info-row">
-                            <span class="info-label">Payment Mode:</span>
-                            <span class="info-value">${shipment.paymentMode || 'N/A'}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">Expected Delivery:</span>
-                            <span class="info-value">${shipment.expectedDelivery ? new Date(shipment.expectedDelivery).toLocaleDateString() : 'N/A'}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">Departure Time:</span>
-                            <span class="info-value">${shipment.departureTime || 'N/A'}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">Pickup Date:</span>
-                            <span class="info-value">${shipment.pickupDate ? new Date(shipment.pickupDate).toLocaleDateString() : 'N/A'}</span>
-                        </div>
-                    </div>
-
-                    <!-- Remarks -->
-                    <div class="info-card">
-                        <h3>Remarks</h3>
-                        <div class="info-row">
-                            <span class="info-label">Remark:</span>
-                            <span class="info-value">${shipment.remark || 'No remarks'}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">Updated By:</span>
-                            <span class="info-value">${shipment.updatedBy || 'N/A'}</span>
+                            <span class="dimension-item">L: ${shipment.length || 'N/A'}cm</span>
+                            <span class="dimension-item">W: ${shipment.width || 'N/A'}cm</span>
+                            <span class="dimension-item">H: ${shipment.height || 'N/A'}cm</span>
+                            <span class="dimension-item">Wt: ${shipment.weight || 'N/A'}kg</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Shipment History -->
                 <div class="history-section">
-                    <h3 class="history-title">Shipment History</h3>
+                    <h3 style="color: #00ffff; margin-bottom: 1rem;">Tracking History</h3>
                     <div class="history-timeline">
-                        ${historyHtml || '<p style="color: #888888; text-align: center;">No history available</p>'}
+                        ${historyHtml || '<p style="color: #888; text-align: center;">No tracking history available</p>'}
                     </div>
                 </div>
             `;
         }
 
-        // Check for tracking number in URL (if someone shares a tracking link)
-        document.addEventListener('DOMContentLoaded', function() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const trackingParam = urlParams.get('tracking');
-            if (trackingParam) {
-                document.getElementById('trackingNumber').value = trackingParam;
-                trackShipment();
+        // Check login status on page load
+        document.addEventListener('DOMContentLoaded', checkLoginStatus);
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('loginModal');
+            if (event.target === modal) {
+                closeLoginModal();
             }
-        });
+        }
     </script>
 </body>
 </html>
