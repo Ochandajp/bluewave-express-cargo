@@ -5,6 +5,7 @@ const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const path = require('path');
+require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -16,7 +17,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname)));
 
 // ============= MongoDB Connection =============
-const MONGODB_URI = 'mongodb+srv://johnpaul:jp54321@cluster0.ugm91.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://johnpaul:jp54321@cluster0.ugm91.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
 
 mongoose.connect(MONGODB_URI, {
     useNewUrlParser: true,
@@ -33,18 +34,15 @@ mongoose.connect(MONGODB_URI, {
 
 // User Schema
 const userSchema = new mongoose.Schema({
-    name: String,
-    username: { type: String, unique: true, sparse: true },
-    email: { type: String, unique: true, sparse: true },
+    name: { type: String, required: true },
+    username: { type: String, unique: true, required: true },
+    email: { type: String, unique: true, required: true },
     phone: String,
-    password: String,
-    taskType: { type: String, enum: ['regular', 'premium'], default: 'regular' },
-    balance: { type: Number, default: 0 },
+    password: { type: String, required: true },
     isAdmin: { type: Boolean, default: false },
-    awardedTasks: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Task' }],
-    accountType: { type: String, enum: ['regular', 'premium', 'admin'], default: 'regular' },
-    totalSpent: { type: Number, default: 0 },
+    accountType: { type: String, enum: ['user', 'admin'], default: 'user' },
     createdAt: { type: Date, default: Date.now },
+    lastLogin: Date,
     status: { type: String, enum: ['active', 'inactive'], default: 'active' }
 });
 
@@ -86,6 +84,7 @@ const shipmentSchema = new mongoose.Schema({
         timestamp: { type: Date, default: Date.now },
         updatedBy: String
     }],
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now }
 });
@@ -94,7 +93,7 @@ const User = mongoose.model('User', userSchema);
 const Shipment = mongoose.model('Shipment', shipmentSchema);
 
 // JWT Secret
-const JWT_SECRET = 'your_jwt_secret_key_change_this';
+const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key_change_this_in_production';
 
 // ============= MIDDLEWARE =============
 
@@ -119,7 +118,7 @@ const isAdmin = async (req, res, next) => {
         if (user && (user.isAdmin || user.accountType === 'admin')) {
             next();
         } else {
-            res.status(403).json({ success: false, message: 'Access denied. Admin required.' });
+            res.status(403).json({ success: false, message: 'Access denied. Admin privileges required.' });
         }
     } catch (error) {
         res.status(500).json({ success: false, message: 'Error checking admin status' });
@@ -149,23 +148,89 @@ app.get('/api/health', (req, res) => {
     });
 });
 
+// ============= REGISTRATION ROUTE =============
+
+app.post('/api/register', async (req, res) => {
+    try {
+        const { name, username, email, phone, password } = req.body;
+
+        if (!name || !username || !email || !password) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Name, username, email and password are required' 
+            });
+        }
+
+        const existingUser = await User.findOne({ 
+            $or: [{ email }, { username }] 
+        });
+        
+        if (existingUser) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'User already exists with this email or username' 
+            });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const user = new User({
+            name,
+            username,
+            email,
+            phone: phone || '',
+            password: hashedPassword,
+            isAdmin: false,
+            accountType: 'user',
+            status: 'active'
+        });
+
+        await user.save();
+
+        const token = jwt.sign(
+            { id: user._id, username: user.username }, 
+            JWT_SECRET,
+            { expiresIn: '7d' }
+        );
+
+        res.status(201).json({ 
+            success: true,
+            message: 'User registered successfully', 
+            token,
+            user: {
+                id: user._id,
+                name: user.name,
+                username: user.username,
+                email: user.email,
+                isAdmin: user.isAdmin,
+                accountType: user.accountType
+            }
+        });
+
+    } catch (error) {
+        console.error('Registration error:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Error registering user',
+            error: error.message 
+        });
+    }
+});
+
 // ============= SETUP ADMIN ROUTE =============
-// THIS IS THE ROUTE YOU NEED - FIXED!
 
 app.get('/api/setup-admin', async (req, res) => {
     try {
         console.log('🔧 Setting up admin...');
         
-        // Check if admin exists
         const adminExists = await User.findOne({ 
             $or: [
-                { username: 'admin' },
-                { email: 'admin@bluewave.com' }
+                { isAdmin: true },
+                { accountType: 'admin' }
             ]
         });
         
         if (!adminExists) {
-            // Create new admin
             const hashedPassword = await bcrypt.hash('admin123', 10);
             const admin = new User({
                 name: 'System Administrator',
@@ -188,7 +253,8 @@ app.get('/api/setup-admin', async (req, res) => {
                 credentials: {
                     username: 'admin',
                     password: 'admin123'
-                }
+                },
+                note: 'You can now login with these credentials'
             });
         } else {
             console.log('✅ Admin already exists');
@@ -199,7 +265,8 @@ app.get('/api/setup-admin', async (req, res) => {
                 credentials: {
                     username: 'admin',
                     password: 'admin123'
-                }
+                },
+                note: 'Use these credentials or your existing admin credentials'
             });
         }
     } catch (error) {
@@ -224,7 +291,6 @@ app.get('/admin', (req, res) => {
 
 // ============= AUTH ROUTES =============
 
-// Login
 app.post('/api/login', async (req, res) => {
     try {
         const { username, password } = req.body;
@@ -262,8 +328,11 @@ app.post('/api/login', async (req, res) => {
             });
         }
 
+        user.lastLogin = new Date();
+        await user.save();
+
         const token = jwt.sign(
-            { id: user._id, username: user.username }, 
+            { id: user._id, username: user.username, isAdmin: user.isAdmin }, 
             JWT_SECRET,
             { expiresIn: '7d' }
         );
@@ -277,7 +346,8 @@ app.post('/api/login', async (req, res) => {
                 name: user.name,
                 username: user.username,
                 email: user.email,
-                isAdmin: user.isAdmin || user.accountType === 'admin'
+                isAdmin: user.isAdmin || user.accountType === 'admin',
+                accountType: user.accountType
             }
         });
     } catch (error) {
@@ -289,9 +359,147 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
+app.get('/api/user', authenticate, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id).select('-password');
+        if (!user) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'User not found' 
+            });
+        }
+        res.json({
+            success: true,
+            user
+        });
+    } catch (error) {
+        res.status(500).json({ 
+            success: false, 
+            message: 'Error fetching user' 
+        });
+    }
+});
+
+// ============= ADMIN USER MANAGEMENT =============
+
+app.get('/api/admin/users', authenticate, isAdmin, async (req, res) => {
+    try {
+        const users = await User.find().select('-password').sort({ createdAt: -1 });
+        res.json({
+            success: true,
+            users
+        });
+    } catch (error) {
+        res.status(500).json({ 
+            success: false, 
+            message: 'Error fetching users' 
+        });
+    }
+});
+
+app.post('/api/admin/users', authenticate, isAdmin, async (req, res) => {
+    try {
+        const { name, username, email, phone, password, isAdmin, accountType } = req.body;
+
+        const existingUser = await User.findOne({ 
+            $or: [{ email }, { username }] 
+        });
+        
+        if (existingUser) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'User already exists' 
+            });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const user = new User({
+            name,
+            username,
+            email,
+            phone,
+            password: hashedPassword,
+            isAdmin: isAdmin || false,
+            accountType: accountType || 'user',
+            status: 'active'
+        });
+
+        await user.save();
+
+        res.status(201).json({ 
+            success: true,
+            message: 'User created successfully',
+            user: {
+                id: user._id,
+                name: user.name,
+                username: user.username,
+                email: user.email,
+                isAdmin: user.isAdmin,
+                accountType: user.accountType
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ 
+            success: false, 
+            message: 'Error creating user' 
+        });
+    }
+});
+
+app.put('/api/admin/users/:id', authenticate, isAdmin, async (req, res) => {
+    try {
+        const { name, email, phone, isAdmin, accountType, status } = req.body;
+        
+        const user = await User.findByIdAndUpdate(
+            req.params.id,
+            { name, email, phone, isAdmin, accountType, status },
+            { new: true }
+        ).select('-password');
+
+        if (!user) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'User not found' 
+            });
+        }
+
+        res.json({ 
+            success: true,
+            message: 'User updated successfully',
+            user
+        });
+    } catch (error) {
+        res.status(500).json({ 
+            success: false, 
+            message: 'Error updating user' 
+        });
+    }
+});
+
+app.delete('/api/admin/users/:id', authenticate, isAdmin, async (req, res) => {
+    try {
+        const user = await User.findByIdAndDelete(req.params.id);
+        if (!user) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'User not found' 
+            });
+        }
+        res.json({ 
+            success: true,
+            message: 'User deleted successfully' 
+        });
+    } catch (error) {
+        res.status(500).json({ 
+            success: false, 
+            message: 'Error deleting user' 
+        });
+    }
+});
+
 // ============= SHIPMENT ROUTES =============
 
-// Public tracking
 app.get('/api/shipments/track/:trackingNumber', async (req, res) => {
     try {
         const { trackingNumber } = req.params;
@@ -318,14 +526,12 @@ app.get('/api/shipments/track/:trackingNumber', async (req, res) => {
     }
 });
 
-// Create shipment (admin only)
 app.post('/api/shipments', authenticate, isAdmin, async (req, res) => {
     try {
         console.log('Creating new shipment...');
         
         const shipmentData = { ...req.body };
         
-        // Generate tracking number if not provided
         if (!shipmentData.trackingNumber) {
             let trackingNumber;
             let exists;
@@ -344,7 +550,8 @@ app.post('/api/shipments', authenticate, isAdmin, async (req, res) => {
             shipmentData.trackingNumber = trackingNumber;
         }
 
-        // Add initial tracking history
+        shipmentData.createdBy = req.user.id;
+
         shipmentData.trackingHistory = [{
             status: shipmentData.status || 'pending',
             location: shipmentData.origin || 'Origin',
@@ -370,10 +577,9 @@ app.post('/api/shipments', authenticate, isAdmin, async (req, res) => {
     }
 });
 
-// Get all shipments (admin only)
 app.get('/api/admin/shipments', authenticate, isAdmin, async (req, res) => {
     try {
-        const shipments = await Shipment.find().sort({ createdAt: -1 });
+        const shipments = await Shipment.find().sort({ createdAt: -1 }).populate('createdBy', 'username');
         res.json({
             success: true,
             shipments
@@ -387,10 +593,9 @@ app.get('/api/admin/shipments', authenticate, isAdmin, async (req, res) => {
     }
 });
 
-// Get single shipment (admin only)
 app.get('/api/admin/shipments/:id', authenticate, isAdmin, async (req, res) => {
     try {
-        const shipment = await Shipment.findById(req.params.id);
+        const shipment = await Shipment.findById(req.params.id).populate('createdBy', 'username');
         if (!shipment) {
             return res.status(404).json({ 
                 success: false,
@@ -410,7 +615,43 @@ app.get('/api/admin/shipments/:id', authenticate, isAdmin, async (req, res) => {
     }
 });
 
-// Delete shipment (admin only)
+app.put('/api/admin/shipments/:id/status', authenticate, isAdmin, async (req, res) => {
+    try {
+        const { status, location, message } = req.body;
+        
+        const shipment = await Shipment.findById(req.params.id);
+        if (!shipment) {
+            return res.status(404).json({ 
+                success: false,
+                message: 'Shipment not found' 
+            });
+        }
+
+        shipment.status = status || shipment.status;
+        shipment.trackingHistory.push({
+            status: shipment.status,
+            location: location || shipment.origin || 'Unknown',
+            message: message || `Status updated to ${shipment.status}`,
+            timestamp: new Date(),
+            updatedBy: req.user.username || 'Admin'
+        });
+
+        shipment.updatedAt = new Date();
+        await shipment.save();
+
+        res.json({ 
+            success: true,
+            message: 'Shipment status updated successfully'
+        });
+    } catch (error) {
+        console.error('Error updating shipment status:', error);
+        res.status(500).json({ 
+            success: false,
+            message: 'Error updating shipment status' 
+        });
+    }
+});
+
 app.delete('/api/admin/shipments/:id', authenticate, isAdmin, async (req, res) => {
     try {
         const shipment = await Shipment.findByIdAndDelete(req.params.id);
@@ -433,7 +674,6 @@ app.delete('/api/admin/shipments/:id', authenticate, isAdmin, async (req, res) =
     }
 });
 
-// Dashboard stats (admin only)
 app.get('/api/admin/stats', authenticate, isAdmin, async (req, res) => {
     try {
         const totalShipments = await Shipment.countDocuments();
@@ -442,10 +682,13 @@ app.get('/api/admin/stats', authenticate, isAdmin, async (req, res) => {
         });
         const deliveredShipments = await Shipment.countDocuments({ status: 'delivered' });
         const pendingShipments = await Shipment.countDocuments({ status: 'pending' });
+        const totalUsers = await User.countDocuments();
+        const adminUsers = await User.countDocuments({ isAdmin: true });
         
         const recentShipments = await Shipment.find()
             .sort({ createdAt: -1 })
-            .limit(5);
+            .limit(5)
+            .populate('createdBy', 'username');
 
         res.json({
             success: true,
@@ -453,6 +696,8 @@ app.get('/api/admin/stats', authenticate, isAdmin, async (req, res) => {
             activeShipments,
             deliveredShipments,
             pendingShipments,
+            totalUsers,
+            adminUsers,
             recentShipments
         });
     } catch (error) {
@@ -464,7 +709,7 @@ app.get('/api/admin/stats', authenticate, isAdmin, async (req, res) => {
     }
 });
 
-// ============= LIST ALL ROUTES FOR DEBUGGING =============
+// ============= LIST ALL ROUTES =============
 app.get('/api/routes', (req, res) => {
     const routes = [];
     app._router.stack.forEach(middleware => {
@@ -483,7 +728,6 @@ app.get('/api/routes', (req, res) => {
 
 // ============= ERROR HANDLING =============
 
-// 404 handler - This catches any route not found
 app.use((req, res) => {
     console.log('404 Not Found:', req.method, req.url);
     res.status(404).json({ 
@@ -494,7 +738,6 @@ app.use((req, res) => {
     });
 });
 
-// Global error handler
 app.use((err, req, res, next) => {
     console.error('Server error:', err);
     res.status(500).json({ 
@@ -507,13 +750,14 @@ app.use((err, req, res, next) => {
 // ============= START SERVER =============
 const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`\n🚀 Server running on port ${PORT}`);
-    console.log(`📱 Test API: https://bluewave-express-cargo.onrender.com/api/test`);
-    console.log(`🔧 Setup Admin: https://bluewave-express-cargo.onrender.com/api/setup-admin`);
-    console.log(`🔑 Admin Login: https://bluewave-express-cargo.onrender.com/admin`);
-    console.log(`📦 Public Tracking: https://bluewave-express-cargo.onrender.com\n`);
+    console.log(`📱 Test API: http://localhost:${PORT}/api/test`);
+    console.log(`📝 Register: http://localhost:${PORT}/api/register (POST)`);
+    console.log(`🔧 Setup Admin: http://localhost:${PORT}/api/setup-admin`);
+    console.log(`🔑 Login: http://localhost:${PORT}/api/login (POST)`);
+    console.log(`📦 Public Tracking: http://localhost:${PORT}`);
+    console.log(`👤 Admin Panel: http://localhost:${PORT}/admin\n`);
 });
 
-// Handle graceful shutdown
 process.on('SIGTERM', () => {
     console.log('SIGTERM signal received: closing HTTP server');
     server.close(() => {
