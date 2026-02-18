@@ -644,6 +644,10 @@
             </div>
             <button class="login-btn" onclick="handleLogin()">Login</button>
             <div class="error-message" id="loginError"></div>
+            <div style="text-align: center; margin-top: 1rem; color: #888;">
+                <p>Default Admin: admin / admin123</p>
+                <p><a href="#" onclick="setupAdmin()" style="color: #00ffff;">Click here to setup admin</a></p>
+            </div>
         </div>
     </div>
 
@@ -703,9 +707,49 @@
     </footer>
 
     <script>
-        // Use your Render.com URL or localhost for development
-        const API_URL = window.location.origin; // This will work on Render
-        // For local testing, you can use: const API_URL = 'http://localhost:5000';
+        // ============= CONFIGURATION =============
+        // Use your actual Render.com URL
+        const API_URL = 'https://bluewave-express-cargo.onrender.com';
+        
+        // For local testing, comment the above and uncomment below:
+        // const API_URL = 'http://localhost:5000';
+
+        console.log('Using API URL:', API_URL);
+
+        // ============= SETUP ADMIN FUNCTION =============
+        async function setupAdmin() {
+            const errorEl = document.getElementById('loginError');
+            errorEl.classList.remove('active');
+            
+            try {
+                const response = await fetch(`${API_URL}/api/setup-admin`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    errorEl.style.color = '#00ff00';
+                    errorEl.innerHTML = `
+                        <div style="color: #00ff00;">
+                            ✅ ${data.message}<br>
+                            Username: ${data.credentials.username}<br>
+                            Password: ${data.credentials.password}
+                        </div>
+                    `;
+                    errorEl.classList.add('active');
+                } else {
+                    errorEl.textContent = data.message || 'Setup failed';
+                    errorEl.classList.add('active');
+                }
+            } catch (error) {
+                console.error('Setup error:', error);
+                errorEl.innerHTML = `
+                    <div style="color: #ff4444;">
+                        ❌ Cannot connect to server<br>
+                        Please check if the server is running at ${API_URL}
+                    </div>
+                `;
+                errorEl.classList.add('active');
+            }
+        }
 
         // Check login status on page load
         function checkLoginStatus() {
@@ -713,10 +757,10 @@
             const user = JSON.parse(localStorage.getItem('user') || '{}');
             const authButtons = document.getElementById('authButtons');
 
-            if (token && user) {
+            if (token && user && user.name) {
                 // User is logged in
                 authButtons.innerHTML = `
-                    <span class="user-greeting">Hello, ${user.name || user.username}</span>
+                    <span class="user-greeting">Hello, ${user.name}</span>
                     <button class="btn-dashboard" onclick="goToDashboard()">Dashboard</button>
                     <button class="btn-logout" onclick="handleLogout()">Logout</button>
                 `;
@@ -756,6 +800,8 @@
             }
 
             try {
+                console.log('Attempting login to:', `${API_URL}/api/login`);
+                
                 const response = await fetch(`${API_URL}/api/login`, {
                     method: 'POST',
                     headers: { 
@@ -766,6 +812,7 @@
                 });
 
                 const data = await response.json();
+                console.log('Login response:', data);
 
                 if (response.ok && data.success) {
                     localStorage.setItem('token', data.token);
@@ -780,7 +827,12 @@
                 }
             } catch (error) {
                 console.error('Login error:', error);
-                errorEl.textContent = 'Cannot connect to server. Please try again.';
+                errorEl.innerHTML = `
+                    <div>
+                        ❌ Cannot connect to server<br>
+                        <small>${error.message}</small>
+                    </div>
+                `;
                 errorEl.classList.add('active');
             }
         }

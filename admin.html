@@ -907,26 +907,16 @@
     </div>
 
     <script>
-        // Use the Render.com URL for API calls
+        // ============= CONFIGURATION =============
+        // Use your actual Render.com URL
         const API_URL = 'https://bluewave-express-cargo.onrender.com';
+        
+        // For local testing, comment the above and uncomment below:
+        // const API_URL = 'http://localhost:5000';
 
-        // Check if user is logged in
-        function checkAuth() {
-            const token = localStorage.getItem('token');
-            const user = JSON.parse(localStorage.getItem('user') || '{}');
-            
-            if (token && user && user.role === 'admin') {
-                document.getElementById('loginSection').style.display = 'none';
-                document.getElementById('dashboardSection').style.display = 'block';
-                document.getElementById('adminName').textContent = user.name || 'Admin';
-                loadDashboard();
-            } else {
-                document.getElementById('loginSection').style.display = 'flex';
-                document.getElementById('dashboardSection').style.display = 'none';
-            }
-        }
+        console.log('Using API URL:', API_URL);
 
-        // Setup admin function
+        // ============= SETUP ADMIN FUNCTION =============
         async function setupAdmin() {
             const errorEl = document.getElementById('loginError');
             errorEl.classList.remove('active');
@@ -951,12 +941,33 @@
                 }
             } catch (error) {
                 console.error('Setup error:', error);
-                errorEl.textContent = 'Cannot connect to server. Please check if the server is running.';
+                errorEl.innerHTML = `
+                    <div style="color: #ff4444;">
+                        ❌ Cannot connect to server<br>
+                        Please check if the server is running at ${API_URL}
+                    </div>
+                `;
                 errorEl.classList.add('active');
             }
         }
 
-        // Admin login - Updated to use /api/login endpoint
+        // Check if user is logged in
+        function checkAuth() {
+            const token = localStorage.getItem('token');
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            
+            if (token && user && (user.isAdmin || user.role === 'admin')) {
+                document.getElementById('loginSection').style.display = 'none';
+                document.getElementById('dashboardSection').style.display = 'block';
+                document.getElementById('adminName').textContent = user.name || 'Admin';
+                loadDashboard();
+            } else {
+                document.getElementById('loginSection').style.display = 'flex';
+                document.getElementById('dashboardSection').style.display = 'none';
+            }
+        }
+
+        // Admin login
         async function adminLogin() {
             const username = document.getElementById('loginUsername').value.trim();
             const password = document.getElementById('loginPassword').value.trim();
@@ -987,7 +998,7 @@
 
                 if (response.ok && data.success) {
                     // Check if user is admin
-                    if (data.user && data.user.role === 'admin') {
+                    if (data.user && (data.user.isAdmin || data.user.role === 'admin')) {
                         localStorage.setItem('token', data.token);
                         localStorage.setItem('user', JSON.stringify(data.user));
                         checkAuth();
@@ -1002,15 +1013,9 @@
             } catch (error) {
                 console.error('Login error:', error);
                 errorEl.innerHTML = `
-                    <div style="text-align: left;">
-                        <p style="color: #ff4444;">❌ Connection Error</p>
-                        <p style="font-size: 0.9rem; color: #fff;">Unable to connect to server. Please try:</p>
-                        <ol style="text-align: left; color: #fff; font-size: 0.9rem; margin-top: 0.5rem;">
-                            <li>Check if the server is running at <a href="${API_URL}" target="_blank" style="color: #00ffff;">${API_URL}</a></li>
-                            <li>Verify your internet connection</li>
-                            <li>Try again in a few moments</li>
-                        </ol>
-                        <p style="color: #888; margin-top: 0.5rem;">Error details: ${error.message}</p>
+                    <div>
+                        ❌ Cannot connect to server<br>
+                        <small>${error.message}</small>
                     </div>
                 `;
                 errorEl.classList.add('active');

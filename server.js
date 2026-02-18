@@ -11,13 +11,16 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-app.use(cors());
+app.use(cors({
+    origin: '*',
+    credentials: true
+}));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname)));
 
 // ============= MongoDB Connection =============
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://johnpaul:jp54321@cluster0.ugm91.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://johnpaul:jp54321@cluster0.ugm91.mongodb.net/shipping_db?retryWrites=true&w=majority';
 
 mongoose.connect(MONGODB_URI, {
     useNewUrlParser: true,
@@ -188,7 +191,7 @@ app.post('/api/register', async (req, res) => {
         await user.save();
 
         const token = jwt.sign(
-            { id: user._id, username: user.username }, 
+            { id: user._id, username: user.username, isAdmin: user.isAdmin }, 
             JWT_SECRET,
             { expiresIn: '7d' }
         );
@@ -203,7 +206,8 @@ app.post('/api/register', async (req, res) => {
                 username: user.username,
                 email: user.email,
                 isAdmin: user.isAdmin,
-                accountType: user.accountType
+                accountType: user.accountType,
+                role: user.isAdmin ? 'admin' : 'user'
             }
         });
 
@@ -347,7 +351,8 @@ app.post('/api/login', async (req, res) => {
                 username: user.username,
                 email: user.email,
                 isAdmin: user.isAdmin || user.accountType === 'admin',
-                accountType: user.accountType
+                accountType: user.accountType,
+                role: user.isAdmin ? 'admin' : 'user'
             }
         });
     } catch (error) {
