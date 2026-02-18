@@ -16,10 +16,8 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname)));
 
 // ============= MongoDB Connection =============
-// Your MongoDB connection string
 const MONGODB_URI = 'mongodb+srv://johnpaul:jp54321@cluster0.ugm91.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
 
-// Connect to MongoDB with error handling
 mongoose.connect(MONGODB_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
@@ -29,12 +27,11 @@ mongoose.connect(MONGODB_URI, {
 })
 .catch(err => {
     console.error('❌ MongoDB connection error:', err.message);
-    // Don't exit, let the server still run for static files
 });
 
 // ============= SCHEMAS =============
 
-// User Schema (keeping your existing structure)
+// User Schema
 const userSchema = new mongoose.Schema({
     name: String,
     username: { type: String, unique: true, sparse: true },
@@ -150,6 +147,69 @@ app.get('/api/health', (req, res) => {
         database: dbStatus,
         timestamp: new Date().toISOString()
     });
+});
+
+// ============= SETUP ADMIN ROUTE =============
+// THIS IS THE ROUTE YOU NEED - FIXED!
+
+app.get('/api/setup-admin', async (req, res) => {
+    try {
+        console.log('🔧 Setting up admin...');
+        
+        // Check if admin exists
+        const adminExists = await User.findOne({ 
+            $or: [
+                { username: 'admin' },
+                { email: 'admin@bluewave.com' }
+            ]
+        });
+        
+        if (!adminExists) {
+            // Create new admin
+            const hashedPassword = await bcrypt.hash('admin123', 10);
+            const admin = new User({
+                name: 'System Administrator',
+                username: 'admin',
+                email: 'admin@bluewave.com',
+                phone: '+1234567890',
+                password: hashedPassword,
+                isAdmin: true,
+                accountType: 'admin',
+                status: 'active'
+            });
+            
+            await admin.save();
+            
+            console.log('✅ Admin created successfully');
+            
+            res.json({ 
+                success: true,
+                message: '✅ Admin created successfully!', 
+                credentials: {
+                    username: 'admin',
+                    password: 'admin123'
+                }
+            });
+        } else {
+            console.log('✅ Admin already exists');
+            
+            res.json({ 
+                success: true,
+                message: '✅ Admin already exists', 
+                credentials: {
+                    username: 'admin',
+                    password: 'admin123'
+                }
+            });
+        }
+    } catch (error) {
+        console.error('❌ Setup admin error:', error);
+        res.status(500).json({ 
+            success: false,
+            message: 'Error setting up admin', 
+            error: error.message 
+        });
+    }
 });
 
 // ============= STATIC ROUTES =============
@@ -404,46 +464,33 @@ app.get('/api/admin/stats', authenticate, isAdmin, async (req, res) => {
     }
 });
 
-// ============= CREATE DEFAULT ADMIN =============
-async function createDefaultAdmin() {
-    try {
-        const adminExists = await User.findOne({ 
-            $or: [
-                { username: 'admin' },
-                { email: 'admin@bluewave.com' }
-            ]
-        });
-        
-        if (!adminExists) {
-            const hashedPassword = await bcrypt.hash('admin123', 10);
-            const admin = new User({
-                name: 'System Administrator',
-                username: 'admin',
-                email: 'admin@bluewave.com',
-                phone: '+1234567890',
-                password: hashedPassword,
-                isAdmin: true,
-                accountType: 'admin',
-                status: 'active'
+// ============= LIST ALL ROUTES FOR DEBUGGING =============
+app.get('/api/routes', (req, res) => {
+    const routes = [];
+    app._router.stack.forEach(middleware => {
+        if (middleware.route) {
+            routes.push({
+                path: middleware.route.path,
+                method: Object.keys(middleware.route.methods)[0].toUpperCase()
             });
-            
-            await admin.save();
-            console.log('✅ Default admin created - Username: admin, Password: admin123');
-        } else {
-            console.log('✅ Admin user exists');
         }
-    } catch (error) {
-        console.error('❌ Error creating admin:', error.message);
-    }
-}
+    });
+    res.json({
+        success: true,
+        routes: routes
+    });
+});
 
 // ============= ERROR HANDLING =============
 
-// 404 handler
+// 404 handler - This catches any route not found
 app.use((req, res) => {
+    console.log('404 Not Found:', req.method, req.url);
     res.status(404).json({ 
         success: false, 
-        message: 'Route not found' 
+        message: 'Route not found',
+        path: req.url,
+        method: req.method
     });
 });
 
@@ -452,19 +499,18 @@ app.use((err, req, res, next) => {
     console.error('Server error:', err);
     res.status(500).json({ 
         success: false, 
-        message: 'Internal server error' 
+        message: 'Internal server error',
+        error: err.message 
     });
 });
 
 // ============= START SERVER =============
 const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`\n🚀 Server running on port ${PORT}`);
-    console.log(`📱 Test API: http://localhost:${PORT}/api/test`);
-    console.log(`🔑 Admin Login: http://localhost:${PORT}/admin`);
-    console.log(`📦 Public Tracking: http://localhost:${PORT}\n`);
-    
-    // Create default admin after server starts
-    setTimeout(createDefaultAdmin, 2000);
+    console.log(`📱 Test API: https://bluewave-express-cargo.onrender.com/api/test`);
+    console.log(`🔧 Setup Admin: https://bluewave-express-cargo.onrender.com/api/setup-admin`);
+    console.log(`🔑 Admin Login: https://bluewave-express-cargo.onrender.com/admin`);
+    console.log(`📦 Public Tracking: https://bluewave-express-cargo.onrender.com\n`);
 });
 
 // Handle graceful shutdown
