@@ -286,7 +286,7 @@ app.get('/api/setup-admin', async (req, res) => {
     }
 });
 
-// ============= CREATE SHIPMENT =============
+// ============= CREATE SHIPMENT WITH MANUAL DATE FOR INITIAL TRACKING =============
 app.post('/api/shipments', authenticate, isAdmin, async (req, res) => {
     try {
         console.log('📦 Creating shipment...');
@@ -311,10 +311,10 @@ app.post('/api/shipments', authenticate, isAdmin, async (req, res) => {
             remark: data.comment || 'Initial shipment registration'
         };
         
-        // Use manual date if provided, otherwise use current date
-        if (data.manualDate) {
-            trackingEntry.timestamp = new Date(data.manualDate);
-            trackingEntry.manualDate = data.manualDate;
+        // Use manual date if provided for initial tracking, otherwise use current date
+        if (data.initialTrackingDate) {
+            trackingEntry.timestamp = new Date(data.initialTrackingDate);
+            trackingEntry.manualDate = data.initialTrackingDate;
         } else {
             trackingEntry.timestamp = new Date();
         }
@@ -353,13 +353,15 @@ app.post('/api/shipments', authenticate, isAdmin, async (req, res) => {
             remark: data.comment || '',
             comment: data.comment || '',
             trackingHistory: [trackingEntry],
-            createdBy: req.user.id
+            createdBy: req.user.id,
+            createdAt: data.initialTrackingDate ? new Date(data.initialTrackingDate) : new Date()
         };
 
         const shipment = new Shipment(shipmentData);
         await shipment.save();
         
         console.log('✅ Shipment created:', shipment.trackingNumber);
+        console.log('✅ Initial tracking date:', trackingEntry.timestamp);
 
         res.status(201).json({ 
             success: true,
@@ -520,6 +522,16 @@ app.post('/api/admin/migrate-shipments', authenticate, isAdmin, async (req, res)
             if (!shipment.currency) {
                 shipment.currency = 'USD';
                 needsUpdate = true;
+            }
+            
+            // Ensure all tracking history entries have manualDate field
+            if (shipment.trackingHistory && shipment.trackingHistory.length > 0) {
+                for (const entry of shipment.trackingHistory) {
+                    if (!entry.manualDate) {
+                        entry.manualDate = '';
+                        needsUpdate = true;
+                    }
+                }
             }
             
             if (needsUpdate) {

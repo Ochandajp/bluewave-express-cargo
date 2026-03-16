@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bluewave Express - Admin Dashboard</title>
     <style>
-        /* [Keep all your existing CSS styles exactly as they are] */
         * {
             margin: 0;
             padding: 0;
@@ -1125,7 +1124,7 @@
                     </div>
                 </div>
 
-                <!-- Create Shipment Section -->
+                <!-- Create Shipment Section (UPDATED WITH INITIAL TRACKING DATE) -->
                 <div id="createSectionContent" style="display: none;">
                     <div class="section-header">
                         <h2 class="section-title">Create New Shipment</h2>
@@ -1143,7 +1142,7 @@
                                 </div>
                             </div>
 
-                            <!-- Shipment Details -->
+                            <!-- Shipment Details (UPDATED WITH INITIAL TRACKING DATE) -->
                             <div class="form-section">
                                 <h3>📦 Shipment Details</h3>
                                 <div class="form-grid">
@@ -1154,6 +1153,12 @@
                                     <div class="form-group">
                                         <label>Pickup Date</label>
                                         <input type="date" id="pickupDate">
+                                    </div>
+                                    <!-- NEW FIELD: Initial Tracking Date -->
+                                    <div class="form-group">
+                                        <label>Initial Tracking Date (Optional)</label>
+                                        <input type="datetime-local" id="initialTrackingDate">
+                                        <small>Set custom date for the initial tracking entry. Leave empty for current date.</small>
                                     </div>
                                     <div class="form-group">
                                         <label>Package Type</label>
@@ -1295,7 +1300,7 @@
                                 </div>
                             </div>
 
-                            <!-- Payment & Freight -->
+                            <!-- Payment & Freight (UPDATED TO USD) -->
                             <div class="form-section">
                                 <h3>💳 Payment & Freight</h3>
                                 <div class="form-grid">
@@ -1384,7 +1389,7 @@
         </div>
     </div>
 
-    <!-- Update Freight Cost Modal -->
+    <!-- Update Freight Cost Modal (UPDATED TO USD) -->
     <div class="modal" id="freightCostModal">
         <div class="modal-content" style="max-width: 500px;">
             <div class="modal-header">
@@ -1450,7 +1455,7 @@
             window.location.href = 'login.html';
         }
 
-        // ============= CHARACTER COUNTER =============
+        // ============= CHARACTER COUNTER AND DATE DEFAULTS =============
         document.addEventListener('DOMContentLoaded', function() {
             const remarkTextarea = document.getElementById('updateRemark');
             if (remarkTextarea) {
@@ -1770,7 +1775,7 @@
             loadShipments();
         }
 
-        // ============= CREATE SHIPMENT =============
+        // ============= CREATE SHIPMENT (UPDATED WITH INITIAL TRACKING DATE) =============
         async function createShipment() {
             try {
                 // Validate required fields
@@ -1783,6 +1788,7 @@
                 const origin = document.getElementById('origin')?.value?.trim();
                 const destination = document.getElementById('destination')?.value?.trim();
                 const comment = document.getElementById('comment')?.value?.trim();
+                const initialTrackingDate = document.getElementById('initialTrackingDate')?.value;
 
                 if (!comment) {
                     showError('Initial remarks are required');
@@ -1843,6 +1849,9 @@
                     pickupDate: document.getElementById('pickupDate')?.value || '',
                     expectedDelivery: document.getElementById('expectedDelivery')?.value || '',
                     
+                    // ADD INITIAL TRACKING DATE
+                    initialTrackingDate: initialTrackingDate || '',
+                    
                     // PAYMENT
                     paymentMode: document.getElementById('paymentMode')?.value || 'cash',
                     freightCost: document.getElementById('freightCost')?.value ? parseFloat(document.getElementById('freightCost').value) : 0,
@@ -1875,6 +1884,12 @@
                     showSuccess(`✅ Shipment created successfully! Tracking: ${data.trackingNumber}`);
                     document.getElementById('shipmentForm').reset();
                     generateTrackingNumber();
+                    
+                    // Reset to current date for convenience
+                    const today = new Date().toISOString().split('T')[0];
+                    document.getElementById('departureDate').value = today;
+                    document.getElementById('pickupDate').value = today;
+                    
                     setTimeout(() => showSection('shipments'), 2000);
                 } else if (response.status === 401) {
                     showError('Session expired. Please login again.');
