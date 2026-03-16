@@ -66,19 +66,27 @@ const userSchema = new mongoose.Schema({
 
 const shipmentSchema = new mongoose.Schema({
     trackingNumber: { type: String, unique: true, required: true },
+    
+    // Sender Information
     senderName: { type: String, default: '' },
     senderEmail: { type: String, default: '' },
     senderPhone: { type: String, default: '' },
     senderAddress: { type: String, default: '' },
+    
+    // Recipient Information
     recipientName: { type: String, default: '' },
     recipientEmail: { type: String, default: '' },
     recipientPhone: { type: String, default: '' },
     deliveryAddress: { type: String, default: '' },
+    
+    // Shipment Information
     origin: { type: String, default: '' },
     destination: { type: String, default: '' },
     carrier: { type: String, default: '' },
     carrierRef: { type: String, default: '' },
     shipmentType: { type: String, default: 'ROAD' },
+    
+    // Package Details
     product: { type: String, default: '' },
     quantity: { type: String, default: '' },
     pieceType: { type: String, default: '' },
@@ -89,26 +97,40 @@ const shipmentSchema = new mongoose.Schema({
     width: { type: String, default: '' },
     height: { type: String, default: '' },
     weight: { type: String, default: '' },
+    
+    // Payment (USD)
     paymentMode: { type: String, default: 'cash' },
     freightCost: { type: Number, default: 0 },
+    currency: { type: String, default: 'USD' },
+    
+    // Dates
     expectedDelivery: { type: String, default: '' },
     departureDate: { type: String, default: '' },
     pickupDate: { type: String, default: '' },
     departureTime: { type: String, default: '' },
+    
+    // Status
     status: { 
         type: String, 
         enum: ['pending', 'on hold', 'out for delivery', 'delivered'],
         default: 'pending'
     },
+    
+    // Remarks
     remark: { type: String, default: '' },
     comment: { type: String, default: '' },
+    
+    // Tracking History with Manual Date Support
     trackingHistory: [{
         status: String,
         location: String,
         message: String,
         remark: String,
-        timestamp: { type: Date, default: Date.now }
+        timestamp: { type: Date, default: Date.now },
+        manualDate: { type: String, default: '' }
     }],
+    
+    // Metadata
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now }
@@ -281,6 +303,22 @@ app.post('/api/shipments', authenticate, isAdmin, async (req, res) => {
             } while (exists);
         }
 
+        // Create tracking history entry with manual date if provided
+        const trackingEntry = {
+            status: data.status || 'pending',
+            location: data.origin || 'Origin',
+            message: 'Shipment created',
+            remark: data.comment || 'Initial shipment registration'
+        };
+        
+        // Use manual date if provided, otherwise use current date
+        if (data.manualDate) {
+            trackingEntry.timestamp = new Date(data.manualDate);
+            trackingEntry.manualDate = data.manualDate;
+        } else {
+            trackingEntry.timestamp = new Date();
+        }
+
         const shipmentData = {
             trackingNumber: trackingNumber,
             senderName: data.senderName || '',
@@ -307,19 +345,14 @@ app.post('/api/shipments', authenticate, isAdmin, async (req, res) => {
             weight: data.weight ? data.weight.toString() : '',
             paymentMode: data.paymentMode || 'cash',
             freightCost: data.freightCost || 0,
+            currency: 'USD',
             expectedDelivery: data.expectedDelivery || '',
             departureDate: data.departureDate || '',
             pickupDate: data.pickupDate || '',
             status: data.status || 'pending',
             remark: data.comment || '',
             comment: data.comment || '',
-            trackingHistory: [{
-                status: data.status || 'pending',
-                location: data.origin || 'Origin',
-                message: 'Shipment created',
-                remark: data.comment || 'Initial shipment registration',
-                timestamp: new Date()
-            }],
+            trackingHistory: [trackingEntry],
             createdBy: req.user.id
         };
 
@@ -371,7 +404,7 @@ app.get('/api/admin/shipments/:id', authenticate, isAdmin, async (req, res) => {
 // ============= UPDATE STATUS =============
 app.put('/api/admin/shipments/:id/status', authenticate, isAdmin, async (req, res) => {
     try {
-        const { status, location, message, remark } = req.body;
+        const { status, location, message, remark, manualDate } = req.body;
         
         if (!remark || remark.trim() === '') {
             return res.status(400).json({ success: false, message: 'Remarks are required' });
@@ -383,13 +416,24 @@ app.put('/api/admin/shipments/:id/status', authenticate, isAdmin, async (req, re
         }
 
         shipment.status = status || shipment.status;
-        shipment.trackingHistory.push({
+        
+        // Create tracking entry with manual date if provided
+        const trackingEntry = {
             status: shipment.status,
             location: location || shipment.origin || 'Unknown',
             message: message || `Status updated to ${shipment.status}`,
-            remark: remark,
-            timestamp: new Date()
-        });
+            remark: remark
+        };
+        
+        // Use manual date if provided, otherwise use current date
+        if (manualDate) {
+            trackingEntry.timestamp = new Date(manualDate);
+            trackingEntry.manualDate = manualDate;
+        } else {
+            trackingEntry.timestamp = new Date();
+        }
+        
+        shipment.trackingHistory.push(trackingEntry);
         shipment.remark = remark;
         shipment.updatedAt = new Date();
         
@@ -413,6 +457,7 @@ app.put('/api/admin/shipments/:id/freight', authenticate, isAdmin, async (req, r
         }
 
         shipment.freightCost = freightCost || 0;
+        shipment.currency = 'USD';
         shipment.updatedAt = new Date();
         await shipment.save();
 
@@ -472,20 +517,8 @@ app.post('/api/admin/migrate-shipments', authenticate, isAdmin, async (req, res)
         for (const shipment of shipments) {
             let needsUpdate = false;
             
-            if (shipment.packageType === undefined || shipment.packageType === null) {
-                shipment.packageType = '';
-                needsUpdate = true;
-            }
-            if (shipment.packageStatus === undefined || shipment.packageStatus === null) {
-                shipment.packageStatus = '';
-                needsUpdate = true;
-            }
-            if (shipment.departureDate === undefined || shipment.departureDate === null) {
-                shipment.departureDate = '';
-                needsUpdate = true;
-            }
-            if (shipment.pickupDate === undefined || shipment.pickupDate === null) {
-                shipment.pickupDate = '';
+            if (!shipment.currency) {
+                shipment.currency = 'USD';
                 needsUpdate = true;
             }
             

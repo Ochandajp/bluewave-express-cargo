@@ -1309,8 +1309,9 @@
                                         </select>
                                     </div>
                                     <div class="form-group">
-                                        <label>Freight Cost (£)</label>
+                                        <label>Freight Cost ($ USD)</label>
                                         <input type="number" id="freightCost" step="0.01" min="0" placeholder="0.00">
+                                        <small>Amount in US Dollars</small>
                                     </div>
                                     <div class="form-group">
                                         <label>Expected Delivery</label>
@@ -1344,7 +1345,7 @@
         </div>
     </div>
 
-    <!-- Update Status Modal -->
+    <!-- Update Status Modal (UPDATED WITH MANUAL DATE FIELD) -->
     <div class="modal" id="updateStatusModal">
         <div class="modal-content" style="max-width: 600px;">
             <div class="modal-header">
@@ -1369,6 +1370,11 @@
                 <input type="text" id="updateMessage" placeholder="Brief update message">
             </div>
             <div class="form-group">
+                <label>Manual Date (Optional - leave empty for current date)</label>
+                <input type="datetime-local" id="updateManualDate">
+                <small>Set a custom date for this tracking event</small>
+            </div>
+            <div class="form-group">
                 <label class="required-field">Remarks</label>
                 <textarea id="updateRemark" rows="5" placeholder="Enter detailed remarks..." required></textarea>
                 <div class="remark-count" id="remarkCount">0 characters</div>
@@ -1386,8 +1392,9 @@
                 <span class="close-modal" onclick="closeFreightCostModal()">&times;</span>
             </div>
             <div class="form-group">
-                <label class="required-field">Freight Cost (£)</label>
-                <input type="number" id="freightCostInput" step="0.01" min="0" placeholder="Enter freight cost">
+                <label class="required-field">Freight Cost ($ USD)</label>
+                <input type="number" id="freightCostInput" step="0.01" min="0" placeholder="Enter freight cost in USD">
+                <small>Amount in US Dollars</small>
             </div>
             <button class="btn-submit" onclick="submitFreightCost()">Update Cost</button>
             <div class="error-message" id="freightError"></div>
@@ -1467,6 +1474,7 @@
             document.getElementById('updateStatus').value = currentStatus || 'pending';
             document.getElementById('updateLocation').value = '';
             document.getElementById('updateMessage').value = '';
+            document.getElementById('updateManualDate').value = '';
             document.getElementById('updateRemark').value = '';
             document.getElementById('remarkCount').textContent = '0 characters';
             document.getElementById('statusError').classList.remove('active');
@@ -1497,7 +1505,7 @@
         function showFreightCostModalFromView() {
             if (currentViewShipmentId) {
                 const costElement = document.querySelector('#viewShipmentDetails .freight-cost, #viewShipmentDetails .freight-tba');
-                const currentCost = costElement && costElement.classList.contains('freight-cost') ? costElement.textContent.replace('£', '') : '';
+                const currentCost = costElement && costElement.classList.contains('freight-cost') ? costElement.textContent.replace('$', '').replace('USD', '').trim() : '';
                 showFreightCostModal(currentViewShipmentId, currentCost);
             }
         }
@@ -1656,9 +1664,9 @@
                 
                 let freightDisplay = '<span class="freight-tba">TBA</span>';
                 if (s.freightCost !== undefined && s.freightCost !== null && s.freightCost > 0) {
-                    freightDisplay = `<span class="freight-cost">£${parseFloat(s.freightCost).toFixed(2)}</span>`;
+                    freightDisplay = `<span class="freight-cost">$${parseFloat(s.freightCost).toFixed(2)} USD</span>`;
                 } else if (s.freightCost === 0) {
-                    freightDisplay = '<span class="freight-cost">£0.00</span>';
+                    freightDisplay = '<span class="freight-cost">$0.00 USD</span>';
                 }
                 
                 const shortId = s._id ? s._id.toString().substring(0, 8) + '...' : '';
@@ -1727,9 +1735,9 @@
                 
                 let freightDisplay = '<span class="freight-tba">TBA</span>';
                 if (s.freightCost !== undefined && s.freightCost !== null && s.freightCost > 0) {
-                    freightDisplay = `<span class="freight-cost">£${parseFloat(s.freightCost).toFixed(2)}</span>`;
+                    freightDisplay = `<span class="freight-cost">$${parseFloat(s.freightCost).toFixed(2)} USD</span>`;
                 } else if (s.freightCost === 0) {
-                    freightDisplay = '<span class="freight-cost">£0.00</span>';
+                    freightDisplay = '<span class="freight-cost">$0.00 USD</span>';
                 }
                 
                 const shortId = s._id ? s._id.toString().substring(0, 8) + '...' : '';
@@ -1762,7 +1770,7 @@
             loadShipments();
         }
 
-        // ============= CREATE SHIPMENT - NOW SENDS ALL FIELDS =============
+        // ============= CREATE SHIPMENT =============
         async function createShipment() {
             try {
                 // Validate required fields
@@ -1882,12 +1890,13 @@
             }
         }
 
-        // ============= SUBMIT STATUS UPDATE =============
+        // ============= SUBMIT STATUS UPDATE (UPDATED WITH MANUAL DATE) =============
         async function submitStatusUpdate() {
             const status = document.getElementById('updateStatus').value;
             const location = document.getElementById('updateLocation').value;
             const message = document.getElementById('updateMessage').value;
             const remark = document.getElementById('updateRemark').value.trim();
+            const manualDate = document.getElementById('updateManualDate').value;
             const errorEl = document.getElementById('statusError');
 
             errorEl.classList.remove('active');
@@ -1915,18 +1924,27 @@
 
             try {
                 const token = localStorage.getItem('token');
+                
+                // Prepare update data
+                const updateData = {
+                    status,
+                    location: location || 'Unknown',
+                    message: message || `Status updated to ${status}`,
+                    remark: remark
+                };
+                
+                // Add manual date if provided
+                if (manualDate) {
+                    updateData.manualDate = manualDate;
+                }
+                
                 const response = await fetch(`${API_URL}/api/admin/shipments/${currentShipmentId}/status`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`
                     },
-                    body: JSON.stringify({
-                        status,
-                        location: location || 'Unknown',
-                        message: message || `Status updated to ${status}`,
-                        remark: remark
-                    })
+                    body: JSON.stringify(updateData)
                 });
 
                 const data = await response.json();
@@ -1993,7 +2011,7 @@
                     closeFreightCostModal();
                     loadShipments();
                     if (document.getElementById('viewShipmentModal').classList.contains('active') && currentViewShipmentId === currentShipmentId) {
-                        viewShipment(currentShipmentId);
+                        viewShipment(currentViewShipmentId);
                     }
                 } else if (response.status === 401) {
                     logout();
@@ -2090,21 +2108,29 @@
                 // Payment
                 paymentMode: shipment.paymentMode || 'Not specified',
                 freightCost: shipment.freightCost,
+                currency: shipment.currency || 'USD',
                 
                 // Remarks
                 comment: shipment.comment || shipment.remark || 'No remarks',
                 remark: shipment.remark || shipment.comment || 'No remarks'
             };
             
-            // Build tracking history HTML
+            // Build tracking history HTML with manual date support
             let historyHtml = '';
             if (shipment.trackingHistory && shipment.trackingHistory.length > 0) {
-                const sortedHistory = [...shipment.trackingHistory].sort((a, b) => 
-                    new Date(b.timestamp) - new Date(a.timestamp)
-                );
+                const sortedHistory = [...shipment.trackingHistory].sort((a, b) => {
+                    const dateA = a.manualDate ? new Date(a.manualDate) : new Date(a.timestamp);
+                    const dateB = b.manualDate ? new Date(b.manualDate) : new Date(b.timestamp);
+                    return dateB - dateA;
+                });
                 
                 sortedHistory.forEach(h => {
-                    const date = h.timestamp ? new Date(h.timestamp).toLocaleString() : 'Date not available';
+                    let dateDisplay = '';
+                    if (h.manualDate) {
+                        dateDisplay = new Date(h.manualDate).toLocaleString();
+                    } else if (h.timestamp) {
+                        dateDisplay = new Date(h.timestamp).toLocaleString();
+                    }
                     
                     const remarkHtml = h.remark ? 
                         `<div class="history-remark">
@@ -2113,7 +2139,7 @@
                     
                     historyHtml += `
                         <div class="history-item">
-                            <span class="history-date">📅 ${date}</span>
+                            <span class="history-date">📅 ${dateDisplay}</span>
                             <span class="history-status">📊 ${h.status || 'Status update'}</span>
                             <span class="history-location">📍 ${h.location || 'Location not specified'}</span>
                             ${h.message ? `<div style="color: #ccc; margin-top: 8px;">💬 ${h.message}</div>` : ''}
@@ -2127,9 +2153,9 @@
             
             let freightDisplay = '<span class="freight-tba">TBA</span>';
             if (safeShipment.freightCost !== undefined && safeShipment.freightCost !== null && safeShipment.freightCost > 0) {
-                freightDisplay = `<span class="freight-cost">£${parseFloat(safeShipment.freightCost).toFixed(2)}</span>`;
+                freightDisplay = `<span class="freight-cost">$${parseFloat(safeShipment.freightCost).toFixed(2)} USD</span>`;
             } else if (safeShipment.freightCost === 0) {
-                freightDisplay = '<span class="freight-cost">£0.00</span>';
+                freightDisplay = '<span class="freight-cost">$0.00 USD</span>';
             }
 
             detailsDiv.innerHTML = `
