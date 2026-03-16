@@ -10,15 +10,28 @@ const fs = require('fs');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
+// ============= IMPROVED CORS CONFIGURATION =============
 app.use(cors({
     origin: '*',
-    credentials: true
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'X-Requested-With', 'Accept'],
+    credentials: true,
+    optionsSuccessStatus: 200
 }));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
 
-// Serve static files from current directory
+// Handle preflight requests
+app.options('*', cors());
+
+app.use(bodyParser.json({ limit: '10mb' }));
+app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
+
+// Log all requests for debugging
+app.use((req, res, next) => {
+    console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+    next();
+});
+
+// Serve static files
 app.use(express.static(path.join(__dirname)));
 
 // ============= MongoDB Connection =============
@@ -35,12 +48,9 @@ mongoose.connect(MONGODB_URI, {
 })
 .catch(err => {
     console.error('❌ MongoDB connection error:', err.message);
-    process.exit(1);
 });
 
 // ============= SCHEMAS =============
-
-// User Schema
 const userSchema = new mongoose.Schema({
     name: { type: String, required: true },
     username: { type: String, unique: true, required: true },
@@ -54,30 +64,21 @@ const userSchema = new mongoose.Schema({
     status: { type: String, enum: ['active', 'inactive'], default: 'active' }
 });
 
-// Shipment Schema - WITH ALL FIELDS
 const shipmentSchema = new mongoose.Schema({
     trackingNumber: { type: String, unique: true, required: true },
-    
-    // Sender Information
     senderName: { type: String, default: '' },
     senderEmail: { type: String, default: '' },
     senderPhone: { type: String, default: '' },
     senderAddress: { type: String, default: '' },
-    
-    // Recipient Information
     recipientName: { type: String, default: '' },
     recipientEmail: { type: String, default: '' },
     recipientPhone: { type: String, default: '' },
     deliveryAddress: { type: String, default: '' },
-    
-    // Shipment Information
     origin: { type: String, default: '' },
     destination: { type: String, default: '' },
     carrier: { type: String, default: '' },
     carrierRef: { type: String, default: '' },
     shipmentType: { type: String, default: 'ROAD' },
-    
-    // Package Details
     product: { type: String, default: '' },
     quantity: { type: String, default: '' },
     pieceType: { type: String, default: '' },
@@ -88,29 +89,19 @@ const shipmentSchema = new mongoose.Schema({
     width: { type: String, default: '' },
     height: { type: String, default: '' },
     weight: { type: String, default: '' },
-    
-    // Payment
     paymentMode: { type: String, default: 'cash' },
     freightCost: { type: Number, default: 0 },
-    
-    // Dates
     expectedDelivery: { type: String, default: '' },
     departureDate: { type: String, default: '' },
     pickupDate: { type: String, default: '' },
     departureTime: { type: String, default: '' },
-    
-    // Status
     status: { 
         type: String, 
         enum: ['pending', 'on hold', 'out for delivery', 'delivered'],
         default: 'pending'
     },
-    
-    // Remarks
     remark: { type: String, default: '' },
     comment: { type: String, default: '' },
-    
-    // Tracking History
     trackingHistory: [{
         status: String,
         location: String,
@@ -118,8 +109,6 @@ const shipmentSchema = new mongoose.Schema({
         remark: String,
         timestamp: { type: Date, default: Date.now }
     }],
-    
-    // Metadata
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now }
@@ -128,11 +117,9 @@ const shipmentSchema = new mongoose.Schema({
 const User = mongoose.model('User', userSchema);
 const Shipment = mongoose.model('Shipment', shipmentSchema);
 
-// JWT Secret
-const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key_change_this_in_production';
+const JWT_SECRET = 'your_jwt_secret_key_change_this_in_production';
 
 // ============= MIDDLEWARE =============
-
 const authenticate = (req, res, next) => {
     const token = req.header('Authorization')?.replace('Bearer ', '');
     if (!token) {
@@ -161,7 +148,7 @@ const isAdmin = async (req, res, next) => {
     }
 };
 
-// ============= SIMPLE TEST ROUTE =============
+// ============= ROUTES =============
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
@@ -178,11 +165,10 @@ app.get('/api/test', (req, res) => {
     });
 });
 
-// ============= PUBLIC TRACKING ROUTE =============
+// ============= PUBLIC TRACKING =============
 app.get('/api/shipments/track/:trackingNumber', async (req, res) => {
     try {
         const { trackingNumber } = req.params;
-        
         const shipment = await Shipment.findOne({ trackingNumber });
 
         if (!shipment) {
@@ -192,57 +178,34 @@ app.get('/api/shipments/track/:trackingNumber', async (req, res) => {
             });
         }
 
-        res.json({
-            success: true,
-            shipment
-        });
+        res.json({ success: true, shipment });
     } catch (error) {
         console.error('Tracking error:', error);
-        res.status(500).json({ 
-            success: false,
-            message: 'Error tracking shipment' 
-        });
+        res.status(500).json({ success: false, message: 'Error tracking shipment' });
     }
 });
 
-// ============= LOGIN ROUTE =============
+// ============= LOGIN =============
 app.post('/api/login', async (req, res) => {
     try {
         const { username, password } = req.body;
-
-        if (!username || !password) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Username and password required' 
-            });
-        }
 
         const user = await User.findOne({ 
             $or: [{ username: username }, { email: username }] 
         });
         
         if (!user) {
-            return res.status(401).json({ 
-                success: false, 
-                message: 'Invalid credentials' 
-            });
+            return res.status(401).json({ success: false, message: 'Invalid credentials' });
         }
 
         const isPasswordValid = await bcrypt.compare(password, user.password);
         
         if (!isPasswordValid) {
-            return res.status(401).json({ 
-                success: false, 
-                message: 'Invalid credentials' 
-            });
+            return res.status(401).json({ success: false, message: 'Invalid credentials' });
         }
 
         const token = jwt.sign(
-            { 
-                id: user._id, 
-                username: user.username, 
-                isAdmin: user.isAdmin 
-            }, 
+            { id: user._id, username: user.username, isAdmin: user.isAdmin }, 
             JWT_SECRET,
             { expiresIn: '7d' }
         );
@@ -256,32 +219,21 @@ app.post('/api/login', async (req, res) => {
                 name: user.name,
                 username: user.username,
                 email: user.email,
-                isAdmin: user.isAdmin || user.accountType === 'admin',
-                accountType: user.accountType,
-                role: user.isAdmin ? 'admin' : 'user'
+                isAdmin: true,
+                role: 'admin'
             }
         });
 
     } catch (error) {
         console.error('Login error:', error);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Server error occurred during login' 
-        });
+        res.status(500).json({ success: false, message: 'Server error' });
     }
 });
 
 // ============= SETUP ADMIN =============
 app.get('/api/setup-admin', async (req, res) => {
     try {
-        console.log('🔧 Setting up admin...');
-        
-        const adminExists = await User.findOne({ 
-            $or: [
-                { isAdmin: true },
-                { accountType: 'admin' }
-            ]
-        });
+        const adminExists = await User.findOne({ isAdmin: true });
         
         if (!adminExists) {
             const hashedPassword = await bcrypt.hash('admin123', 10);
@@ -298,42 +250,28 @@ app.get('/api/setup-admin', async (req, res) => {
             
             await admin.save();
             
-            console.log('✅ Admin created successfully');
-            
             res.json({ 
                 success: true,
                 message: '✅ Admin created successfully!', 
-                credentials: {
-                    username: 'admin',
-                    password: 'admin123'
-                }
+                credentials: { username: 'admin', password: 'admin123' }
             });
         } else {
-            console.log('✅ Admin already exists');
-            
-            res.json({ 
-                success: true,
-                message: '✅ Admin already exists'
-            });
+            res.json({ success: true, message: '✅ Admin already exists' });
         }
     } catch (error) {
         console.error('❌ Setup admin error:', error);
-        res.status(500).json({ 
-            success: false,
-            message: 'Error setting up admin', 
-            error: error.message 
-        });
+        res.status(500).json({ success: false, message: 'Error setting up admin' });
     }
 });
 
 // ============= CREATE SHIPMENT =============
 app.post('/api/shipments', authenticate, isAdmin, async (req, res) => {
     try {
-        console.log('📦 RECEIVED SHIPMENT DATA');
+        console.log('📦 Creating shipment...');
         
         const data = req.body;
         
-        // Generate tracking number if not provided
+        // Generate tracking number
         let trackingNumber = data.trackingNumber;
         if (!trackingNumber) {
             let exists;
@@ -343,29 +281,20 @@ app.post('/api/shipments', authenticate, isAdmin, async (req, res) => {
             } while (exists);
         }
 
-        // Create shipment object with ALL fields
         const shipmentData = {
             trackingNumber: trackingNumber,
-            
-            // SENDER INFORMATION
             senderName: data.senderName || '',
             senderEmail: data.senderEmail || '',
             senderPhone: data.senderPhone || '',
             senderAddress: data.senderAddress || '',
-            
-            // RECIPIENT INFORMATION
             recipientName: data.recipientName || '',
             recipientEmail: data.recipientEmail || '',
             recipientPhone: data.recipientPhone || '',
             deliveryAddress: data.deliveryAddress || '',
-            
-            // SHIPMENT INFORMATION
             origin: data.origin || '',
             destination: data.destination || '',
             carrier: data.carrier || '',
             shipmentType: data.shipmentType || 'ROAD',
-            
-            // PACKAGE DETAILS
             product: data.product || '',
             quantity: data.quantity ? data.quantity.toString() : '',
             pieceType: data.pieceType || '',
@@ -376,24 +305,14 @@ app.post('/api/shipments', authenticate, isAdmin, async (req, res) => {
             width: data.width ? data.width.toString() : '',
             height: data.height ? data.height.toString() : '',
             weight: data.weight ? data.weight.toString() : '',
-            
-            // PAYMENT
             paymentMode: data.paymentMode || 'cash',
             freightCost: data.freightCost || 0,
-            
-            // DATES
             expectedDelivery: data.expectedDelivery || '',
             departureDate: data.departureDate || '',
             pickupDate: data.pickupDate || '',
-            
-            // STATUS
             status: data.status || 'pending',
-            
-            // REMARKS
             remark: data.comment || '',
             comment: data.comment || '',
-            
-            // TRACKING HISTORY
             trackingHistory: [{
                 status: data.status || 'pending',
                 location: data.origin || 'Origin',
@@ -401,14 +320,13 @@ app.post('/api/shipments', authenticate, isAdmin, async (req, res) => {
                 remark: data.comment || 'Initial shipment registration',
                 timestamp: new Date()
             }],
-            
             createdBy: req.user.id
         };
 
         const shipment = new Shipment(shipmentData);
         await shipment.save();
         
-        console.log('✅ SHIPMENT SAVED:', shipment.trackingNumber);
+        console.log('✅ Shipment created:', shipment.trackingNumber);
 
         res.status(201).json({ 
             success: true,
@@ -417,7 +335,7 @@ app.post('/api/shipments', authenticate, isAdmin, async (req, res) => {
         });
 
     } catch (error) {
-        console.error('❌ ERROR SAVING SHIPMENT:', error);
+        console.error('❌ Error creating shipment:', error);
         res.status(500).json({ 
             success: false,
             message: 'Error creating shipment: ' + error.message 
@@ -429,16 +347,10 @@ app.post('/api/shipments', authenticate, isAdmin, async (req, res) => {
 app.get('/api/admin/shipments', authenticate, isAdmin, async (req, res) => {
     try {
         const shipments = await Shipment.find().sort({ createdAt: -1 });
-        res.json({
-            success: true,
-            shipments
-        });
+        res.json({ success: true, shipments });
     } catch (error) {
         console.error('Error fetching shipments:', error);
-        res.status(500).json({ 
-            success: false,
-            message: 'Error fetching shipments' 
-        });
+        res.status(500).json({ success: false, message: 'Error fetching shipments' });
     }
 });
 
@@ -447,21 +359,12 @@ app.get('/api/admin/shipments/:id', authenticate, isAdmin, async (req, res) => {
     try {
         const shipment = await Shipment.findById(req.params.id);
         if (!shipment) {
-            return res.status(404).json({ 
-                success: false,
-                message: 'Shipment not found' 
-            });
+            return res.status(404).json({ success: false, message: 'Shipment not found' });
         }
-        res.json({
-            success: true,
-            shipment
-        });
+        res.json({ success: true, shipment });
     } catch (error) {
         console.error('Error fetching shipment:', error);
-        res.status(500).json({ 
-            success: false,
-            message: 'Error fetching shipment' 
-        });
+        res.status(500).json({ success: false, message: 'Error fetching shipment' });
     }
 });
 
@@ -471,22 +374,15 @@ app.put('/api/admin/shipments/:id/status', authenticate, isAdmin, async (req, re
         const { status, location, message, remark } = req.body;
         
         if (!remark || remark.trim() === '') {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Remarks are required for status update' 
-            });
+            return res.status(400).json({ success: false, message: 'Remarks are required' });
         }
 
         const shipment = await Shipment.findById(req.params.id);
         if (!shipment) {
-            return res.status(404).json({ 
-                success: false,
-                message: 'Shipment not found' 
-            });
+            return res.status(404).json({ success: false, message: 'Shipment not found' });
         }
 
         shipment.status = status || shipment.status;
-        
         shipment.trackingHistory.push({
             status: shipment.status,
             location: location || shipment.origin || 'Unknown',
@@ -494,23 +390,15 @@ app.put('/api/admin/shipments/:id/status', authenticate, isAdmin, async (req, re
             remark: remark,
             timestamp: new Date()
         });
-
         shipment.remark = remark;
-        shipment.comment = remark;
         shipment.updatedAt = new Date();
         
         await shipment.save();
 
-        res.json({ 
-            success: true,
-            message: 'Shipment status updated successfully'
-        });
+        res.json({ success: true, message: 'Status updated successfully' });
     } catch (error) {
-        console.error('Error updating shipment status:', error);
-        res.status(500).json({ 
-            success: false,
-            message: 'Error updating shipment status' 
-        });
+        console.error('Error updating status:', error);
+        res.status(500).json({ success: false, message: 'Error updating status' });
     }
 });
 
@@ -521,27 +409,17 @@ app.put('/api/admin/shipments/:id/freight', authenticate, isAdmin, async (req, r
         
         const shipment = await Shipment.findById(req.params.id);
         if (!shipment) {
-            return res.status(404).json({ 
-                success: false,
-                message: 'Shipment not found' 
-            });
+            return res.status(404).json({ success: false, message: 'Shipment not found' });
         }
 
         shipment.freightCost = freightCost || 0;
         shipment.updatedAt = new Date();
-        
         await shipment.save();
 
-        res.json({ 
-            success: true,
-            message: 'Freight cost updated successfully'
-        });
+        res.json({ success: true, message: 'Freight cost updated successfully' });
     } catch (error) {
         console.error('Error updating freight cost:', error);
-        res.status(500).json({ 
-            success: false,
-            message: 'Error updating freight cost' 
-        });
+        res.status(500).json({ success: false, message: 'Error updating freight cost' });
     }
 });
 
@@ -550,21 +428,12 @@ app.delete('/api/admin/shipments/:id', authenticate, isAdmin, async (req, res) =
     try {
         const shipment = await Shipment.findByIdAndDelete(req.params.id);
         if (!shipment) {
-            return res.status(404).json({ 
-                success: false,
-                message: 'Shipment not found' 
-            });
+            return res.status(404).json({ success: false, message: 'Shipment not found' });
         }
-        res.json({ 
-            success: true,
-            message: 'Shipment deleted successfully' 
-        });
+        res.json({ success: true, message: 'Shipment deleted successfully' });
     } catch (error) {
         console.error('Error deleting shipment:', error);
-        res.status(500).json({ 
-            success: false,
-            message: 'Error deleting shipment' 
-        });
+        res.status(500).json({ success: false, message: 'Error deleting shipment' });
     }
 });
 
@@ -578,9 +447,7 @@ app.get('/api/admin/stats', authenticate, isAdmin, async (req, res) => {
         const deliveredShipments = await Shipment.countDocuments({ status: 'delivered' });
         const pendingShipments = await Shipment.countDocuments({ status: 'pending' });
         
-        const recentShipments = await Shipment.find()
-            .sort({ createdAt: -1 })
-            .limit(5);
+        const recentShipments = await Shipment.find().sort({ createdAt: -1 }).limit(5);
 
         res.json({
             success: true,
@@ -592,10 +459,7 @@ app.get('/api/admin/stats', authenticate, isAdmin, async (req, res) => {
         });
     } catch (error) {
         console.error('Error fetching stats:', error);
-        res.status(500).json({ 
-            success: false,
-            message: 'Error fetching stats' 
-        });
+        res.status(500).json({ success: false, message: 'Error fetching stats' });
     }
 });
 
@@ -639,10 +503,7 @@ app.post('/api/admin/migrate-shipments', authenticate, isAdmin, async (req, res)
         });
     } catch (error) {
         console.error('Migration error:', error);
-        res.status(500).json({ 
-            success: false,
-            message: 'Error migrating shipments: ' + error.message 
-        });
+        res.status(500).json({ success: false, message: 'Error migrating shipments' });
     }
 });
 
@@ -650,18 +511,10 @@ app.post('/api/admin/migrate-shipments', authenticate, isAdmin, async (req, res)
 app.get('/api/debug/check-db', authenticate, isAdmin, async (req, res) => {
     try {
         const count = await Shipment.countDocuments();
-        const sample = await Shipment.findOne().sort({ createdAt: -1 });
         res.json({
             success: true,
             databaseConnected: mongoose.connection.readyState === 1,
-            totalShipments: count,
-            latestShipment: sample ? {
-                trackingNumber: sample.trackingNumber,
-                senderName: sample.senderName,
-                packageType: sample.packageType,
-                packageStatus: sample.packageStatus,
-                departureDate: sample.departureDate
-            } : null
+            totalShipments: count
         });
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -669,9 +522,9 @@ app.get('/api/debug/check-db', authenticate, isAdmin, async (req, res) => {
 });
 
 // ============= START SERVER =============
-const server = app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`\n🚀 Server running on port ${PORT}`);
     console.log(`📱 Public site: http://localhost:${PORT}`);
     console.log(`👤 Admin panel: http://localhost:${PORT}/admin`);
-    console.log(`✅ MongoDB connection state: ${mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected'}\n`);
+    console.log(`✅ Test API: http://localhost:${PORT}/api/test\n`);
 });
